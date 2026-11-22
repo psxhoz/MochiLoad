@@ -36,6 +36,8 @@ struct UserCustomizationsView: View {
     @State private var preferResignedIPA: Bool = UserDefaults.standard.preferResignedIPA
     @State private var pendingPreferIPAOngoing: Bool = false
     @State private var showPreferIPAToggleAlert: Bool = false
+    @AppStorage(MochiBackgroundStyle.userDefaultsKey) private var mochiBackgroundStyle: String = MochiBackgroundStyle.aurora.rawValue
+    @AppStorage(MochiBackgroundStyle.liveUserDefaultsKey) private var mochiLiveBackground: Bool = true
     // MochiLoad: "expires soon" reminders (see ExpiryReminderScheduler)
     @State private var expiryRemindersEnabled: Bool = ExpiryReminderScheduler.isEnabled
     @State private var isExportResignedAppEnabled: Bool = UserDefaults.standard.isExportResignedAppEnabled
@@ -89,9 +91,55 @@ struct UserCustomizationsView: View {
                         .foregroundColor(Color.white.opacity(0.6))
                         .padding(.horizontal, 16)
                     
+                    // MochiLoad: moving background style + motion switch
+                    VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Background")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("The slowly moving colors behind MochiLoad.")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color.white.opacity(0.6))
+                        }
+                        HStack(spacing: 8) {
+                            ForEach(MochiBackgroundStyle.allCases) { style in
+                                SwiftUI.Button(action: { mochiBackgroundStyle = style.rawValue }) {
+                                    ZStack(alignment: .bottomLeading) {
+                                        LinearGradient(colors: style.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                                        Text(style.rawValue)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .shadow(color: .black.opacity(0.6), radius: 4)
+                                            .padding(8)
+                                    }
+                                    .frame(height: 64)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(mochiBackgroundStyle == style.rawValue ? Color.white : Color.white.opacity(0.12),
+                                                    lineWidth: mochiBackgroundStyle == style.rawValue ? 2 : 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(Text("\(style.rawValue) background"))
+                                .accessibilityAddTraits(mochiBackgroundStyle == style.rawValue ? .isSelected : [])
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.settingsRowBackground)
+                    .cornerRadius(14)
+
+                    toggleRow(title: "Live Background",
+                              subtitle: "Slowly moving colors. Turn off to save a little battery.",
+                              isOn: $mochiLiveBackground)
+                        .background(Color.settingsRowBackground)
+                        .cornerRadius(14)
+
                     NavigationLink(destination: ThemePickerView()) {
                         HStack {
-                            Text("Theme Manager")
+                            Text("Accent Color")
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(.white)
                             Spacer()

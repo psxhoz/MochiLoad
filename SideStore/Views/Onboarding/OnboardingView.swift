@@ -9,6 +9,7 @@
 import Minimuxer
 import SwiftUI
 import UniformTypeIdentifiers
+import UserNotifications
 
 struct OnboardingView: View {
     var onFinish: (() -> Void)? = nil
@@ -17,11 +18,8 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            #if !os(tvOS)
-                Color(.systemBackground).ignoresSafeArea()
-            #else
-                Color.black.ignoresSafeArea()
-            #endif
+            // MochiLoad: moving aurora background behind every setup step
+            MochiAuroraBackground()
 
             VStack(spacing: 0) {
                 topBar
@@ -59,15 +57,17 @@ struct OnboardingView: View {
                 #endif
             }
         }
+        .environment(\.colorScheme, .dark)
     }
 
     private var topBar: some View {
         ZStack {
             HStack(spacing: 6) {
                 ForEach(0 ..< totalSteps, id: \.self) { index in
-                    Circle()
-                        .fill(index == currentStep ? Color.accentColor : Color.primary.opacity(0.18))
-                        .frame(width: 6, height: 6)
+                    Capsule()
+                        .fill(index == currentStep ? Color.accentColor : Color.white.opacity(0.22))
+                        .frame(width: index == currentStep ? 18 : 6, height: 6)
+                        .animation(.easeInOut(duration: 0.25), value: currentStep)
                 }
             }
             .padding(.horizontal, 14)
@@ -99,95 +99,89 @@ struct OnboardingView: View {
 
 private struct WelcomeStep: View {
     let onNext: () -> Void
-    @State private var isBreathing = false
+    @State private var isFloating = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 22) {
+                Image(uiImage: UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")!)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 104, height: 104)
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.45), radius: 18, x: 0, y: 10)
+                    .offset(y: isFloating ? -6 : 0)
+                    .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: isFloating)
+                    .onAppear { isFloating = true }
+                    .padding(.top, 28)
 
-            Image(uiImage: UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")!)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 96, height: 96)
-                .cornerRadius(22)
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                .scaleEffect(isBreathing ? 1.05 : 1.0)
-                .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: isBreathing)
-                .onAppear { isBreathing = true }
+                VStack(spacing: 10) {
+                    Text(NSLocalizedString("Apps the App Store doesn't have.", comment: ""))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .foregroundColor(MochiColors.text)
+                        .multilineTextAlignment(.center)
 
-            VStack(spacing: 8) {
-                Text(NSLocalizedString("Welcome to MochiLoad", comment: ""))
-                    .font(.system(size: 28, weight: .bold))
-                    .multilineTextAlignment(.center)
+                    Text(NSLocalizedString("MochiLoad installs apps from a file or a link, signed with your own Apple ID. After setup, you never need a computer.", comment: ""))
+                        .font(.subheadline)
+                        .foregroundColor(MochiColors.mutedText)
+                        .multilineTextAlignment(.center)
+                }
 
-                Text(NSLocalizedString("Sideload and refresh apps directly on your device, untethered from a computer.", comment: ""))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                VStack(spacing: 0) {
+                    setupRow(1,
+                             NSLocalizedString("Connect to this iPhone", comment: ""),
+                             NSLocalizedString("A one-time pairing. On iOS 27 it happens right in Settings.", comment: ""))
+                    divider
+                    setupRow(2,
+                             NSLocalizedString("Turn on LocalDevVPN", comment: ""),
+                             NSLocalizedString("A free App Store app that lets installs happen on your phone.", comment: ""))
+                    divider
+                    setupRow(3,
+                             NSLocalizedString("Sign in with your Apple ID", comment: ""),
+                             NSLocalizedString("Only used to sign your apps. A spare Apple ID works too.", comment: ""))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .mochiGlass()
+
+                SwiftUI.Button(action: onNext) {
+                    HStack(spacing: 8) {
+                        Text(NSLocalizedString("Get Started", comment: ""))
+                        Image(systemName: "arrow.right")
+                    }
+                }
+                .buttonStyle(MochiPrimaryButtonStyle())
+                .padding(.top, 4)
             }
-
-            VStack(alignment: .leading, spacing: 18) {
-                featureRow(
-                    icon: "arrow.triangle.2.circlepath",
-                    color: .blue,
-                    title: NSLocalizedString("On-Device Sideloading", comment: ""),
-                    description: NSLocalizedString("Install and refresh apps using an on-device local loopback VPN tunnel.", comment: "")
-                )
-
-                featureRow(
-                    icon: "doc.badge.gearshape",
-                    color: .orange,
-                    title: NSLocalizedString("Device Pairing", comment: ""),
-                    description: String(
-                        format: NSLocalizedString("A one-time pairing file connects MochiLoad to %@ device services.", comment: ""),
-                        ProcessInfo.processInfo.platformName
-                    )
-                )
-
-                featureRow(
-                    icon: "person.crop.circle.badge.checkmark",
-                    color: .green,
-                    title: NSLocalizedString("Personal Signing", comment: ""),
-                    description: NSLocalizedString("Use your own Apple ID to sign apps with standard development certificates.", comment: "")
-                )
-            }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 28)
-            .padding(.top, 12)
-
-            Spacer()
-
-            SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Get Started", comment: ""))
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.accentColor)
-                    .cornerRadius(14)
-            }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .frame(maxWidth: 440)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 20)
         }
     }
 
-    private func featureRow(icon: String, color: Color, title: String, description: String) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-                .frame(width: 32, height: 32)
+    private var divider: some View {
+        Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
+    }
 
+    private func setupRow(_ number: Int, _ title: String, _ detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.accentColor)
+                .frame(width: 30, height: 30)
+                .overlay(Circle().stroke(Color.accentColor, lineWidth: 1.5))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.headline)
-                Text(description)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(MochiColors.text)
+                Text(detail)
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(MochiColors.mutedText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
+        .padding(.vertical, 12)
     }
 }
 
@@ -196,107 +190,115 @@ private struct PairingFileStep: View {
     @State private var hasPairingFile = PairingFileManager.shared.hasPairingFile()
     @State private var isShowingFilePicker = false
     @State private var errorMessage: String? = nil
+    // MochiLoad: on-device pairing through Settings → Privacy & Security → Developer Mode (iOS 27+)
+    @StateObject private var pairing = WirelessPairViewModel()
 
     private let contentTypes: [UTType] = PairingFileManager.supportedContentTypes
 
+    private var supportsOnDevicePairing: Bool {
+        ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
+    }
+
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                Image(systemName: hasPairingFile ? "checkmark.seal.fill" : "link.circle.fill")
+                    .font(.system(size: 64, weight: .regular))
+                    .foregroundColor(hasPairingFile ? Color(hex: 0x5EEAD4) : .accentColor)
+                    .padding(.top, 24)
+                    .animation(.easeInOut, value: hasPairingFile)
 
-            Image(systemName: hasPairingFile ? "checkmark.seal.fill" : "doc.badge.gearshape.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .foregroundColor(hasPairingFile ? .green : .accentColor)
-                .animation(.easeInOut, value: hasPairingFile)
-
-            VStack(spacing: 8) {
-                Text(NSLocalizedString("Pairing File", comment: ""))
-                    .font(.system(size: 28, weight: .bold))
-
-                Text(String(
-                    format: NSLocalizedString("MochiLoad uses a pairing file (.mobiledevicepairing or .plist) generated by your computer to talk to %@ device services.", comment: ""),
-                    ProcessInfo.processInfo.platformName
-                ))
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            }
-
-            if hasPairingFile {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text(NSLocalizedString("Pairing file detected and loaded.", comment: ""))
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-
-            VStack(spacing: 12) {
-                #if !os(tvOS)
-                    SwiftUI.Button(action: { isShowingFilePicker = true }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "square.and.arrow.down")
-                            Text(hasPairingFile
-                                ? NSLocalizedString("Choose Different File", comment: "")
-                                : NSLocalizedString("Select Pairing File", comment: ""))
-                        }
-                        .font(.headline)
-                        .foregroundColor(.accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
-                    }
-
-                    SwiftUI.Button(action: {
-                        UIApplication.shared.open(AppConstants.URLs.pairingDocumentation)
-                    }) {
-                        Text(NSLocalizedString("How do I get a pairing file?", comment: ""))
-                            .font(.footnote)
-                            .foregroundColor(.accentColor)
-                    }
-                #endif
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundColor(.red)
+                VStack(spacing: 8) {
+                    Text(hasPairingFile
+                         ? NSLocalizedString("You're paired!", comment: "")
+                         : NSLocalizedString("Connect to this iPhone", comment: ""))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(MochiColors.text)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
-                }
-            }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 32)
 
-            Spacer()
-
-            VStack(spacing: 12) {
-                SwiftUI.Button(action: onNext) {
-                    Text(NSLocalizedString("Continue", comment: ""))
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(hasPairingFile ? Color.accentColor : Color.gray.opacity(0.4))
-                        .cornerRadius(14)
+                    Text(NSLocalizedString("MochiLoad needs a one-time \"pairing\" so it can install apps on this iPhone. Think of it as plugging into a computer, without the cable.", comment: ""))
+                        .font(.subheadline)
+                        .foregroundColor(MochiColors.mutedText)
+                        .multilineTextAlignment(.center)
                 }
-                .disabled(!hasPairingFile)
+                .padding(.horizontal, 8)
 
                 if !hasPairingFile {
-                    SwiftUI.Button(action: onNext) {
-                        Text(NSLocalizedString("Set Up Later", comment: ""))
+                    if supportsOnDevicePairing {
+                        automaticPairingCard
+                    } else {
+                        Text(NSLocalizedString("Automatic pairing needs iOS 27 or later. On this iPhone, use a pairing file made on a computer instead.", comment: ""))
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MochiColors.mutedText)
+                            .multilineTextAlignment(.center)
+                            .padding(14)
+                            .mochiGlass(cornerRadius: 16)
+                    }
+
+                    #if !os(tvOS)
+                    VStack(spacing: 8) {
+                        SwiftUI.Button(action: { isShowingFilePicker = true }) {
+                            Label(NSLocalizedString("Use a pairing file from a computer", comment: ""), systemImage: "doc.badge.plus")
+                        }
+                        .buttonStyle(MochiSecondaryButtonStyle())
+
+                        SwiftUI.Button(action: { UIApplication.shared.open(AppConstants.URLs.pairingDocumentation) }) {
+                            Text(NSLocalizedString("How do I make a pairing file?", comment: ""))
+                                .font(.footnote)
+                                .foregroundColor(MochiColors.mutedText)
+                                .underline()
+                        }
+                    }
+                    #endif
+                } else {
+                    Label(NSLocalizedString("Pairing is saved. You won't need to do this again unless you reset your passcode.", comment: ""), systemImage: "checkmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundColor(MochiColors.text)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .mochiGlass(cornerRadius: 16)
+                }
+
+                if let message = errorMessage ?? pairing.errorMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundColor(MochiColors.warning)
+                        .multilineTextAlignment(.center)
+                }
+
+                VStack(spacing: 10) {
+                    SwiftUI.Button(action: onNext) {
+                        Text(NSLocalizedString("Continue", comment: ""))
+                    }
+                    .buttonStyle(MochiPrimaryButtonStyle(isEnabled: hasPairingFile))
+                    .disabled(!hasPairingFile)
+
+                    if !hasPairingFile {
+                        SwiftUI.Button(action: onNext) {
+                            Text(NSLocalizedString("Set Up Later", comment: ""))
+                                .font(.footnote)
+                                .foregroundColor(MochiColors.mutedText)
+                                .padding(8)
+                        }
                     }
                 }
+                .padding(.top, 4)
             }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .frame(maxWidth: 440)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 20)
+        }
+        .onAppear {
+            pairing.presentsShareSheetOnSuccess = false
+            pairing.activatesPairingOnSuccess = true
+        }
+        .onDisappear {
+            if pairing.isAdvertising { pairing.stopPairing() }
+        }
+        .onChange(of: pairing.didActivatePairing) { activated in
+            guard activated else { return }
+            hasPairingFile = true
+            errorMessage = nil
         }
         #if !os(tvOS)
         .fileImporter(
@@ -311,7 +313,6 @@ private struct PairingFileStep: View {
                     try PairingFileManager.shared.importPairingFile(from: url)
                     hasPairingFile = true
                     errorMessage = nil
-                    onNext()
                 } catch {
                     errorMessage = error.localizedDescription
                 }
@@ -320,6 +321,89 @@ private struct PairingFileStep: View {
             }
         }
         #endif
+    }
+
+    // MochiLoad: the no-computer way. Needs proper testing on iOS 27 devices.
+    private var automaticPairingCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.accentColor)
+                Text(NSLocalizedString("Pair automatically", comment: ""))
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(MochiColors.text)
+                Spacer()
+                Text(NSLocalizedString("No computer", comment: ""))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(MochiColors.ink)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color(hex: 0x5EEAD4)))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                stepRow(1, NSLocalizedString("Tap Start pairing below, and allow Local Network and Notifications if asked.", comment: ""))
+                stepRow(2, NSLocalizedString("Open the Settings app → Privacy & Security → Developer Mode.", comment: ""))
+                stepRow(3, NSLocalizedString("Tap \"Pair with MochiLoad\" and type the code from the notification.", comment: ""))
+                stepRow(4, NSLocalizedString("Come back here. That's it.", comment: ""))
+            }
+
+            if pairing.isAdvertising {
+                VStack(spacing: 6) {
+                    if let pin = pairing.pinCode {
+                        Text(NSLocalizedString("Your code", comment: ""))
+                            .mochiSectionLabel()
+                        Text(pin)
+                            .font(.system(size: 34, weight: .bold, design: .monospaced))
+                            .foregroundColor(MochiColors.text)
+                            .tracking(4)
+                    } else {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text(NSLocalizedString("Waiting for Settings…", comment: ""))
+                                .font(.footnote)
+                                .foregroundColor(MochiColors.mutedText)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+
+            SwiftUI.Button(action: togglePairing) {
+                Text(pairing.isAdvertising
+                     ? NSLocalizedString("Stop", comment: "")
+                     : NSLocalizedString("Start pairing", comment: ""))
+            }
+            .buttonStyle(MochiPrimaryButtonStyle())
+        }
+        .padding(16)
+        .mochiGlass()
+    }
+
+    private func stepRow(_ number: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.accentColor)
+                .frame(width: 26, height: 26)
+                .overlay(Circle().stroke(Color.accentColor, lineWidth: 1.5))
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(MochiColors.text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func togglePairing() {
+        errorMessage = nil
+        if pairing.isAdvertising {
+            pairing.stopPairing()
+            return
+        }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in
+            Task { @MainActor in pairing.startPairing() }
+        }
     }
 }
 

@@ -11,6 +11,8 @@ import SwiftUI
 import Combine
 import Network
 import Minimuxer
+import UIKit
+import UserNotifications
 
 enum SelectedEndpointOption: Equatable {
     case discovered(WirelessPairTarget)
@@ -98,6 +100,15 @@ final class WirelessPairViewModel: ObservableObject {
     // Share Sheet State
     @Published var shareSheetURL: URL? = nil
     @Published var isShareSheetPresented = false   
+
+    // MochiLoad: on-device pairing (iOS 27+ Developer Mode → "Pair with MochiLoad")
+    /// Turn the new pairing on right away, so nobody has to import a file.
+    var activatesPairingOnSuccess = true
+    /// The advanced Settings screen still offers to export the file; setup doesn't.
+    var presentsShareSheetOnSuccess = true
+    /// Set once the pairing was saved and switched on.
+    @Published var didActivatePairing = false
+    private var pairingBackgroundTask: UIBackgroundTaskIdentifier = .invalid
     
     private let pairingServiceTypes = [
         "_remotepairing-manual-pairing._tcp",
@@ -148,6 +159,8 @@ final class WirelessPairViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self = self else { return }
                 self.pinCode = pin
+                // MochiLoad: the person is in the Settings app, so show the code as a notification too.
+                Self.postPairingCodeNotification(pin)
                 self.statusText = "Device Connected"
                 self.subStatusText = "Enter the pairing code shown below on your other device settings screen."
             }
@@ -493,7 +506,8 @@ final class WirelessPairViewModel: ObservableObject {
         serviceID = nil
         port = nil
         statusText = "Waiting for connection..."
-        subStatusText = "Open Remote Pairing on your Apple TV / Vision Pro / host device to discover this server."
+        subStatusText = "Open Settings → Privacy & Security → Developer Mode and tap \"Pair with MochiLoad\"."
+        beginPairingBackgroundTask()
         
         wirelessPairing.start(
             outPath: docsPath,
@@ -510,14 +524,16 @@ final class WirelessPairViewModel: ObservableObject {
                 self.serviceID = nil
                 self.port = nil
                 
+                self.endPairingBackgroundTask()
                 switch result {
                 case .success(let device):
                     debugLog("[WirelessPairViewModel] startPairing() SUCCESS with device: name='\(device.name)', model='\(device.model)'")
                     self.pairedDevice = device
                     self.statusText = "Success!"
                     self.subStatusText = "Successfully paired with \(device.name) (\(device.model))!\nPairing file saved to documents."
+                    self.activatePairingIfNeeded(path: device.pairingFilePath)
                     self.shareSheetURL = URL(fileURLWithPath: device.pairingFilePath)
-                    self.isShareSheetPresented = true
+                    self.isShareSheetPresented = self.presentsShareSheetOnSuccess
                 case .failure(let error):
                     debugLog("[WirelessPairViewModel] startPairing() FAILURE: error='\(error.localizedDescription)'")
                     self.errorMessage = error.localizedDescription
@@ -531,6 +547,7 @@ final class WirelessPairViewModel: ObservableObject {
     func stopPairing() {
         debugLog("[WirelessPairViewModel] stopPairing() stopping advertisement and tearing down session")
         wirelessPairing.stop()
+        endPairingBackgroundTask()
         
         isAdvertising = false
         statusText = "Ready to pair"
@@ -592,6 +609,44 @@ final class WirelessPairViewModel: ObservableObject {
         }
     }
     
+    // MARK: - MochiLoad helpers (needs proper testing on iOS 27 devices)
+
+    /// Saves the new pairing as MochiLoad's active pairing, so setup can move straight on.
+    private func activatePairingIfNeeded(path: String) {
+        guard activatesPairingOnSuccess else { return }
+        do {
+            try PairingFileManager.shared.importPairingFile(from: URL(fileURLWithPath: path))
+            didActivatePairing = true
+            subStatusText = "Paired! MochiLoad can now install and refresh apps."
+        } catch {
+            debugLog("[WirelessPairViewModel] activatePairingIfNeeded() failed: \(error)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// iOS only gives a backgrounded app a short time; ask for it while the person types the code in Settings.
+    private func beginPairingBackgroundTask() {
+        endPairingBackgroundTask()
+        pairingBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "MochiLoadPairing") { [weak self] in
+            Task { @MainActor in self?.endPairingBackgroundTask() }
+        }
+    }
+
+    private func endPairingBackgroundTask() {
+        guard pairingBackgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(pairingBackgroundTask)
+        pairingBackgroundTask = .invalid
+    }
+
+    private static func postPairingCodeNotification(_ pin: String) {
+        let content = UNMutableNotificationContent()
+        content.title = NSLocalizedString("MochiLoad pairing code", comment: "")
+        content.body = String(format: NSLocalizedString("Type %@ in Settings to finish pairing.", comment: ""), pin)
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: "mochi.pairing.code", content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     nonisolated static func pairingFileName(for deviceName: String? = nil, model: String? = nil) -> String {
         let namePart = deviceName ?? ""
         let modelPart = model ?? ""

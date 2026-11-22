@@ -19,7 +19,9 @@ public struct ThemePreset: Identifiable, Equatable {
     }
     
     public static let presets: [ThemePreset] = [
-        ThemePreset(id: "classic", name: "SideStore Teal", hex: "#19D3B5"),
+        ThemePreset(id: "classic", name: "Mochi Lavender", hex: "#A78BFA"), // MochiLoad default
+        ThemePreset(id: "mint", name: "Mint", hex: "#5EEAD4"),
+        ThemePreset(id: "rose", name: "Rose", hex: "#F9A8D4"),
         ThemePreset(id: "neonViolet", name: "Neon Violet", hex: "#8B5CF6"),
         ThemePreset(id: "sunsetCrimson", name: "Sunset Crimson", hex: "#EF4444"),
         ThemePreset(id: "sapphireBlue", name: "Sapphire Blue", hex: "#3B82F6"),
@@ -34,6 +36,9 @@ public final class ThemeManager: ObservableObject {
     public static let themeDidChangeNotification = Notification.Name("SideStoreThemeDidChangeNotification")
 
     private static let userDefaultsKey = "userCustomThemeHex"
+
+    /// MochiLoad: lavender accent unless the person picked something else.
+    public static let mochiDefaultColor: UIColor = UIColor(hex: "#A78BFA") ?? .defaultAltPrimary
 
     @Published public var primaryColor: UIColor {
         didSet {
@@ -52,12 +57,12 @@ public final class ThemeManager: ObservableObject {
            let color = UIColor(hex: hex) {
             self.primaryColor = color
         } else {
-            self.primaryColor = .defaultAltPrimary
+            self.primaryColor = Self.mochiDefaultColor
         }
     }
 
     public func resetToDefault() {
-        self.primaryColor = .defaultAltPrimary
+        self.primaryColor = Self.mochiDefaultColor
         UserDefaults.standard.removeObject(forKey: Self.userDefaultsKey)
     }
 }

@@ -557,7 +557,8 @@ public final class WirelessPairWrapper {
     ) {
         debugLog("[WirelessPairWrapper] start(outPath: '\(outPath)')")
         #if !targetEnvironment(simulator)
-        minimuxer.wirelessPair.start(outPath: outPath, resolveFileName: resolveFileName) { result in
+        // MochiLoad: this name is what iOS shows as "Pair with MochiLoad" in Developer Mode settings.
+        minimuxer.wirelessPair.start(hostName: "MochiLoad", hostModel: MinimuxerConstants.defaultHostModel, outPath: outPath, resolveFileName: resolveFileName) { result in
             debugLog("[WirelessPairWrapper] start callback received: result=\(result)")
             switch result {
             case .success(let device):
