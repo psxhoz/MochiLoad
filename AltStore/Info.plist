@@ -6,6 +6,8 @@
 	<string>https://ani.sidestore.io</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>MochiLoad</string>
 	<key>CFBundleDocumentTypes</key>

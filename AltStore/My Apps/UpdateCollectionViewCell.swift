@@ -116,7 +116,7 @@ private extension UpdateCollectionViewCell
         case .expanded: self.versionDescriptionTextView.isCollapsed = false
         }
         
-        self.blurView.backgroundColor = self.originalTintColor ?? self.tintColor
+        self.blurView.backgroundColor = (self.originalTintColor ?? self.tintColor)?.withAlphaComponent(0.22) // MochiLoad: softer, glassy
         self.bannerView.button.progressTintColor = self.originalTintColor ?? self.tintColor
         
         self.setNeedsLayout()

@@ -63,6 +63,7 @@ final class TabBarController: UITabBarController
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiRefreshAllApps(_:)), name: .mochiRefreshAllApps, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiOpenPairing(_:)), name: .mochiOpenPairing, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiOpenSettings(_:)), name: .mochiOpenSettings, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiOpenMyApps(_:)), name: .mochiOpenMyApps, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiAppDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
 
         // MochiLoad: dark look everywhere, with the chosen accent color.
@@ -227,6 +228,12 @@ extension TabBarController
         DispatchQueue.main.async {
             myApps.mochiStartRefreshAll()
         }
+    }
+    
+    @objc func mochiOpenMyApps(_ notification: Notification)
+    {
+        self.selectedIndex = Tab.myApps.rawValue
+        self.mochiMakeSelectedTabTransparent()
     }
     
     @objc func mochiOpenSettings(_ notification: Notification)

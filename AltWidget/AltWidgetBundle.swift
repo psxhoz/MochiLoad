@@ -19,5 +19,8 @@ struct AltWidgetBundle: WidgetBundle
         TextLockScreenWidget()
         
         ActiveAppsWidget()
+        
+        // MochiLoad: "Refreshing apps" on the lock screen and Dynamic Island.
+        MochiRefreshActivityWidget()
     }
 }

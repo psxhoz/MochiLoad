@@ -31,9 +31,9 @@ extension SettingsViewController
         case appRefresh
         case instructions
         case techyThings
+        case advancedSettings   // MochiLoad: moved above Credits so Credits is last
         case credits
         case betaTesting
-        case advancedSettings
         case diagnostics    // diagnostics section, will be enabled on release builds only on swipe down with 3 fingers 3 times
         // case macDirtyCow
     }
@@ -88,6 +88,10 @@ extension SettingsViewController
         case userCustomizations     // row 11 - User Customizations
 
         static var allCases: [AdvancedSettingsRow] {
+            // MochiLoad: simple mode shows only what a normal person needs; "Show Advanced Settings" reveals the rest.
+            guard SettingsViewController.mochiShowsAdvanced else {
+                return [.userCustomizations, .pairingFileManagement, .certificateManagement, .backupAndRestore, .sendFeedback]
+            }
             var rows: [AdvancedSettingsRow] = [.sendFeedback, .refreshAttempts, .refreshSideJITServer, .pairingFileManagement]
             if !UserDefaults.standard.useOnDeviceAnisette {
                 rows.append(.anisetteServers)
@@ -537,7 +541,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Enable Background Refresh to automatically refresh apps in the background when connected to Wi-Fi. \n\nEnable Disable Idle Timeout to allow MochiLoad to keep your device awake during a refresh or install of any apps.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Background Refresh: MochiLoad refreshes your apps by itself while your iPhone charges on Wi-Fi.\n\nDisable Idle Timeout: keeps the screen on while installing, so it doesn't stop halfway.\n\nSiri: lets you say \"Refresh my apps\" or add it to a Shortcut.", comment: "")
             }
             
         case .display:
@@ -547,7 +551,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Personalize your MochiLoad experience by choosing an alternate app icon.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Pick a different app icon color. More looks (background, colors) are in More → Look & Automation.", comment: "")
             }
             
             
@@ -568,7 +572,16 @@ private extension SettingsViewController
             settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("CREDITS", comment: "")
             
         case .advancedSettings:
-            settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("ADVANCED SETTINGS", comment: "")
+            if isHeader
+            {
+                settingsHeaderFooterView.primaryLabel.text = SettingsViewController.mochiShowsAdvanced ? NSLocalizedString("ADVANCED SETTINGS", comment: "") : NSLocalizedString("MORE", comment: "")
+            }
+            else
+            {
+                settingsHeaderFooterView.secondaryLabel.text = SettingsViewController.mochiShowsAdvanced
+                    ? NSLocalizedString("These are for fixing problems. You don't need to change them for MochiLoad to work.", comment: "")
+                    : NSLocalizedString("Look & Automation: colors, background, icon and reminders.\nPair This iPhone: redo pairing if installing stops working.\nCertificates: the signature your apps use.\nBackup & Restore: save app data before big changes.", comment: "")
+            }
 
         case .betaTesting:
             if isHeader
@@ -627,6 +640,9 @@ private extension SettingsViewController
         // MochiLoad: SideStore's socials/Patreon section and its beta channel don't apply here.
         // SideStore is still credited in the Credits section.
         case .patreon, .betaTesting: return true
+
+        // MochiLoad: storage tools and logs only in advanced mode.
+        case .techyThings: return !SettingsViewController.mochiShowsAdvanced
 
         default: return false
         }
@@ -977,6 +993,13 @@ extension SettingsViewController
 
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
     {
+        // MochiLoad: rows in the advanced section can be reordered/filtered, so fix their rounded corners.
+        if Section.allCases[indexPath.section] == .advancedSettings, let insetCell = cell as? InsetGroupTableViewCell
+        {
+            let count = AdvancedSettingsRow.allCases.count
+            insetCell.style = count == 1 ? .single : (indexPath.row == 0 ? .top : (indexPath.row == count - 1 ? .bottom : .middle))
+        }
+        
         if Section.allCases[indexPath.section] == .account {
             if indexPath.row == 2, let insetCell = cell as? InsetGroupTableViewCell {
                 insetCell.style = (self.accountStatus == .completed) ? .bottom : .middle
@@ -1332,7 +1355,7 @@ extension SettingsViewController
                 let userCustomizationsView = UserCustomizationsView()
                 let vc = UIHostingController(rootView: userCustomizationsView)
                 vc.view.backgroundColor = .settingsBackground
-                vc.title = NSLocalizedString("User Customizations", comment: "")
+                vc.title = NSLocalizedString("Look & Automation", comment: "")
                 self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
                 
             case .refreshAttempts: break
@@ -1423,15 +1446,40 @@ extension SettingsViewController: INUIAddVoiceShortcutViewControllerDelegate
 // MochiLoad
 extension SettingsViewController
 {
+    static var mochiShowsAdvanced: Bool {
+        get { UserDefaults.standard.bool(forKey: "mochi.showAdvancedSettings") }
+        set { UserDefaults.standard.set(newValue, forKey: "mochi.showAdvancedSettings") }
+    }
+
     fileprivate func mochiInstallFooter()
     {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+
+        var configuration = UIButton.Configuration.gray()
+        configuration.cornerStyle = .capsule
+        configuration.baseForegroundColor = .white
+        configuration.title = SettingsViewController.mochiShowsAdvanced
+            ? NSLocalizedString("Hide Advanced Settings", comment: "")
+            : NSLocalizedString("Show Advanced Settings", comment: "")
+        let button = UIButton(configuration: configuration, primaryAction: UIAction { [weak self] _ in
+            SettingsViewController.mochiShowsAdvanced.toggle()
+            self?.mochiInstallFooter()
+            self?.tableView.reloadData()
+        })
+
         let label = UILabel()
         label.text = String(format: NSLocalizedString("MochiLoad %@", comment: ""), version)
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textColor = UIColor.white.withAlphaComponent(0.45)
         label.textAlignment = .center
-        label.frame = CGRect(x: 0, y: 0, width: self.tableView.bounds.width, height: 60)
-        self.tableView.tableFooterView = label
+
+        let stack = UIStackView(arrangedSubviews: [button, label])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 12
+        stack.frame = CGRect(x: 0, y: 0, width: self.tableView.bounds.width, height: 110)
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 16, leading: 0, bottom: 24, trailing: 0)
+        self.tableView.tableFooterView = stack
     }
 }

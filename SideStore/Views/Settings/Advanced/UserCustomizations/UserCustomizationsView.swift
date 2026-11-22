@@ -39,6 +39,7 @@ struct UserCustomizationsView: View {
     @AppStorage(MochiBackgroundStyle.userDefaultsKey) private var mochiBackgroundStyle: String = MochiBackgroundStyle.aurora.rawValue
     @AppStorage(MochiBackgroundStyle.liveUserDefaultsKey) private var mochiLiveBackground: Bool = true
     @AppStorage(MochiAutomation.autoRefreshOnOpenKey) private var mochiAutoRefreshOnOpen: Bool = true
+    @AppStorage(MochiRefreshLiveActivity.enabledKey) private var mochiRefreshLiveActivity: Bool = true
     // MochiLoad: "expires soon" reminders (see ExpiryReminderScheduler)
     @State private var expiryRemindersEnabled: Bool = ExpiryReminderScheduler.isEnabled
     @State private var isExportResignedAppEnabled: Bool = UserDefaults.standard.isExportResignedAppEnabled
@@ -491,7 +492,7 @@ struct UserCustomizationsView: View {
             .padding(.bottom, 32)
         }
         .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
-        .navigationTitle("User Customizations")
+        .navigationTitle("Look & Automation")
         #if !os(tvOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
@@ -853,6 +854,12 @@ struct UserCustomizationsView: View {
                 toggleRow(title: "Refresh When Opened",
                           subtitle: "When you open MochiLoad and an app expires within 2 days, refresh it automatically (LocalDevVPN must be on).",
                           isOn: $mochiAutoRefreshOnOpen)
+
+                divider
+
+                toggleRow(title: "Lock Screen Progress",
+                          subtitle: "Show a progress bar on the lock screen and Dynamic Island while apps refresh.",
+                          isOn: $mochiRefreshLiveActivity)
 
                 divider
 

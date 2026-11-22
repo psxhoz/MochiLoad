@@ -108,13 +108,13 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .openAppFailed(let name):
             return "MochiLoad was denied permission to launch \(name)."
         case .pairingNotComplete(let reason):
-            return "Pairing Required: \(reason)\n\nMochiLoad needs to pair with this iPhone once before it can install apps. Go to Settings → Advanced → Pairing File Management → Wireless Pairing and follow the steps (no computer needed on iOS 27)."
+            return "Pairing Required: \(reason)\n\nMochiLoad needs to pair with this iPhone once before it can install apps. Go to Settings → More → Pair This iPhone → Wireless Pairing and follow the steps (no computer needed on iOS 27)."
         case .pledgeInactive(let appName):
             return "Your pledge is no longer active. Please renew it to continue using \(appName) normally."
         case .SideJITIssue(let error):
             return "An error occurred while using SideJIT: \(error)"
         case .unknownUDID(let reason):
-            return "MochiLoad couldn't identify this iPhone: \(reason)\n\nPair again in Settings → Advanced → Pairing File Management → Wireless Pairing."
+            return "MochiLoad couldn't identify this iPhone: \(reason)\n\nPair again in Settings → More → Pair This iPhone → Wireless Pairing."
         }
     }
 

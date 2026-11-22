@@ -370,6 +370,7 @@ private extension AppBannerView
     {
         self.clipsToBounds = true
         self.layer.cornerRadius = 22
+        self.layer.cornerCurve = .continuous
         
         let tintColor = self.originalTintColor ?? self.tintColor
         self.subtitleLabel.textColor = tintColor
@@ -386,8 +387,16 @@ private extension AppBannerView
             
             self.button.style = .pill
             
-            self.backgroundEffectView.contentView.backgroundColor = UIColor(resource: .blurTint)
-            self.backgroundEffectView.backgroundColor = tintColor
+            // MochiLoad: frosted dark glass with a hint of the app's color and a thin light edge.
+            #if !os(tvOS)
+            self.backgroundEffectView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+            #endif
+            self.backgroundEffectView.contentView.backgroundColor = UIColor.white.withAlphaComponent(0.04)
+            self.backgroundEffectView.backgroundColor = (tintColor ?? .altPrimary).withAlphaComponent(0.16)
+            self.layer.borderWidth = 1
+            self.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
+            self.titleLabel.textColor = .white
+            self.subtitleLabel.textColor = (tintColor ?? .altPrimary).adjustedForDisplay
             
         case .source:
             self.directionalLayoutMargins.trailing = 20
@@ -401,6 +410,7 @@ private extension AppBannerView
             
             self.backgroundEffectView.contentView.backgroundColor = tintColor?.adjustedForDisplay
             self.backgroundEffectView.backgroundColor = nil
+            self.layer.borderWidth = 0
             
             #if !os(tvOS)
             if let tintColor, tintColor.isTooBright

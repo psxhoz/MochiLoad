@@ -18,6 +18,8 @@ extension Notification.Name
     static let mochiOpenPairing = Notification.Name("mochi.openPairing")
     /// Home asks the tab bar to switch to Settings (to sign in).
     static let mochiOpenSettings = Notification.Name("mochi.openSettings")
+    /// Home asks the tab bar to switch to My Apps (to update MochiLoad).
+    static let mochiOpenMyApps = Notification.Name("mochi.openMyApps")
 }
 
 enum MochiAutomation
@@ -77,6 +79,8 @@ final class MochiHomeViewModel: ObservableObject
     /// nil while checking.
     @Published var isConnected: Bool?
     @Published var apps: [MochiHomeApp] = []
+    /// Newer MochiLoad version from the source, if any.
+    @Published var updateVersion: String?
 
     private var connectionTask: Task<Void, Never>?
 
@@ -94,6 +98,15 @@ final class MochiHomeViewModel: ObservableObject
             else
             {
                 self.accountName = nil
+            }
+
+            if let mochiLoad = InstalledApp.fetchAltStore(in: context), mochiLoad.hasUpdate
+            {
+                self.updateVersion = mochiLoad.storeApp?.latestSupportedVersion?.version
+            }
+            else
+            {
+                self.updateVersion = nil
             }
 
             self.apps = InstalledApp.fetchActiveApps(in: context)
@@ -152,6 +165,11 @@ struct MochiHomeView: View
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(MochiColors.mutedText)
                         .padding(.top, 4)
+
+                    if let version = self.model.updateVersion
+                    {
+                        self.updateCard(version: version)
+                    }
 
                     self.heroCard
 
@@ -261,6 +279,45 @@ struct MochiHomeView: View
             return String(format: NSLocalizedString("%@ stopped opening. Tap Refresh All Apps to fix it.", comment: ""), next.name)
         }
         return String(format: NSLocalizedString("%@ expires first: %@.", comment: ""), next.name, next.timeLeftText.lowercased())
+    }
+
+    // MARK: - Update
+
+    private func updateCard(version: String) -> some View
+    {
+        HStack(spacing: 14) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(Color.accentColor)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(Color.accentColor.opacity(0.18)))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(NSLocalizedString("MochiLoad update ready", comment: ""))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(MochiColors.text)
+                Text(String(format: NSLocalizedString("Version %@. Your apps and sign-in stay.", comment: ""), version))
+                    .font(.footnote)
+                    .foregroundColor(MochiColors.mutedText)
+            }
+
+            Spacer(minLength: 8)
+
+            SwiftUI.Button {
+                NotificationCenter.default.post(name: .mochiOpenMyApps, object: nil)
+            } label: {
+                Text(NSLocalizedString("Update", comment: ""))
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Color.accentColor))
+                    .foregroundColor(MochiColors.ink)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .mochiGlass(cornerRadius: 22)
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Color.accentColor.opacity(0.6), lineWidth: 1.5))
     }
 
     // MARK: - Setup

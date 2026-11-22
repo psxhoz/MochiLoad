@@ -345,8 +345,12 @@ private extension MyAppsViewController
             cell.layoutMargins.right = self.view.layoutMargins.right
             
             cell.blurView.layer.cornerRadius = 20
+            cell.blurView.layer.cornerCurve = .continuous
             cell.blurView.layer.masksToBounds = true
-            cell.blurView.backgroundColor = .altPrimary
+            // MochiLoad: glass card instead of a solid lavender block.
+            cell.blurView.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+            cell.blurView.layer.borderWidth = 1
+            cell.blurView.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
             
             cell.button.addTarget(self, action: #selector(MyAppsViewController.showHiddenUpdatesAlert(_:)), for: .primaryActionTriggered)
             
@@ -713,6 +717,8 @@ private extension MyAppsViewController
     func refresh(_ installedApps: [InstalledApp], completionHandler: @escaping ([String : Result<InstalledApp, Error>]) -> Void)
     {
         let group = AppManager.shared.refresh(installedApps, presentingViewController: self, group: self.isRefreshingAllApps ? self.refreshGroup : nil)
+        // MochiLoad: progress on the lock screen / Dynamic Island.
+        let liveActivity = MochiRefreshLiveActivity.start(appNames: installedApps.map { $0.name }, progress: group.progress)
         group.completionHandler = { (results) in
             DispatchQueue.main.async {
                 let failures = results.compactMapValues { (result) -> Error? in
@@ -723,6 +729,8 @@ private extension MyAppsViewController
                     case .success: return nil
                     }
                 }
+                
+                liveActivity?.finish(failedCount: failures.count)
                 
                 guard !failures.isEmpty else { return }
                 
