@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.16",
-          "buildVersion": "16",
-          "date": "2026-11-22T18:22:42Z",
-          "localizedDescription": "Simpler Settings, update banner, glass app rows, lock screen refresh progress",
+          "version": "1.0.17",
+          "buildVersion": "17",
+          "date": "2026-11-22T22:40:38Z",
+          "localizedDescription": "Auto-update MochiLoad, pick extension option automatically, copy pairing code, app icons on Home",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38724145,
+          "size": 38741144,
           "minOSVersion": "15.0"
         }
       ],
