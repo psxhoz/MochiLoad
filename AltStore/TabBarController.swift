@@ -52,13 +52,18 @@ final class TabBarController: UITabBarController
         let sourcesNavigationController = self.viewControllers![Tab.sources.rawValue] as! UINavigationController
         self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
 
-        // MochiLoad: swap SideStore's News tab for the Learn tab (beginner explainers).
+        // MochiLoad: swap SideStore's News tab for Home (setup status, expiry, refresh, explainers).
         // Same position, so the other tab indexes stay the same.
         if var tabs = self.viewControllers, tabs.count > Tab.news.rawValue
         {
-            tabs[Tab.news.rawValue] = MochiLearnTab.makeNavigationController()
+            tabs[Tab.news.rawValue] = MochiHomeTab.makeNavigationController()
             self.setViewControllers(tabs, animated: false)
         }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiRefreshAllApps(_:)), name: .mochiRefreshAllApps, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiOpenPairing(_:)), name: .mochiOpenPairing, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiOpenSettings(_:)), name: .mochiOpenSettings, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(TabBarController.mochiAppDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
 
         // MochiLoad: dark look everywhere, with the chosen accent color.
         self.overrideUserInterfaceStyle = .dark
@@ -199,5 +204,72 @@ extension TabBarController: UITabBarControllerDelegate
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController)
     {
         self.mochiMakeSelectedTabTransparent()
+    }
+}
+
+// MochiLoad: actions coming from the Home tab, and refreshing automatically when the app opens.
+extension TabBarController
+{
+    private static var mochiLastAutoRefresh: Date?
+    
+    private var mochiMyAppsViewController: MyAppsViewController? {
+        guard let tabs = self.viewControllers, tabs.count > Tab.myApps.rawValue,
+              let navigationController = tabs[Tab.myApps.rawValue] as? UINavigationController else { return nil }
+        return navigationController.viewControllers.first as? MyAppsViewController
+    }
+    
+    @objc func mochiRefreshAllApps(_ notification: Notification)
+    {
+        guard let myApps = self.mochiMyAppsViewController else { return }
+        self.selectedIndex = Tab.myApps.rawValue
+        self.mochiMakeSelectedTabTransparent()
+        myApps.loadViewIfNeeded()
+        DispatchQueue.main.async {
+            myApps.refreshAllApps(UIBarButtonItem())
+        }
+    }
+    
+    @objc func mochiOpenSettings(_ notification: Notification)
+    {
+        self.selectedIndex = Tab.settings.rawValue
+        self.mochiMakeSelectedTabTransparent()
+    }
+    
+    @objc func mochiOpenPairing(_ notification: Notification)
+    {
+        guard let tabs = self.viewControllers, let home = tabs.first as? UINavigationController else { return }
+        self.selectedIndex = Tab.news.rawValue
+        let pairing = UIHostingController(rootView: PairingFileManagementView())
+        pairing.title = NSLocalizedString("Pair This iPhone", comment: "")
+        home.pushViewController(pairing, animated: true)
+    }
+    
+    @objc func mochiAppDidBecomeActive(_ notification: Notification)
+    {
+        guard MochiAutomation.autoRefreshOnOpen, DatabaseManager.shared.isStarted else { return }
+        if let last = Self.mochiLastAutoRefresh, Date().timeIntervalSince(last) < 30 * 60 { return }
+        
+        let soon = Date().addingTimeInterval(2 * 24 * 60 * 60)
+        let needsRefresh = InstalledApp.fetchActiveApps(in: DatabaseManager.shared.viewContext).contains { $0.expirationDate < soon }
+        guard needsRefresh, PairingFileManager.shared.fetchPairingFile() != nil else { return }
+        
+        Self.mochiLastAutoRefresh = Date()
+        Task { @MainActor in
+            do
+            {
+                // Only when LocalDevVPN is on; otherwise stay quiet and let Home explain.
+                try await ensureMinimuxerReady()
+            }
+            catch
+            {
+                debugLog("[MochiLoad] Skipping refresh on open: not connected (\(error))")
+                return
+            }
+            
+            guard let myApps = self.mochiMyAppsViewController else { return }
+            debugLog("[MochiLoad] Apps expire within 2 days; refreshing automatically.")
+            myApps.loadViewIfNeeded()
+            myApps.refreshAllApps(UIBarButtonItem())
+        }
     }
 }

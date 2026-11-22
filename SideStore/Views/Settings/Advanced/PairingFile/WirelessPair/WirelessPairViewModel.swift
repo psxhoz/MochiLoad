@@ -618,6 +618,16 @@ final class WirelessPairViewModel: ObservableObject {
             try PairingFileManager.shared.importPairingFile(from: URL(fileURLWithPath: path))
             didActivatePairing = true
             subStatusText = "Paired! MochiLoad can now install and refresh apps."
+            // Load it right away so installing works without restarting the app.
+            if let contents = PairingFileManager.shared.fetchPairingFile() {
+                Task.detached {
+                    do {
+                        try await AppBootManager.shared.startMinimuxer(pairingFile: contents)
+                    } catch {
+                        debugLog("[WirelessPairViewModel] startMinimuxer after pairing failed: \(error)")
+                    }
+                }
+            }
         } catch {
             debugLog("[WirelessPairViewModel] activatePairingIfNeeded() failed: \(error)")
             errorMessage = error.localizedDescription

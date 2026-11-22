@@ -128,8 +128,50 @@ private func isRetriableRemotePairingError(_ error: Error) -> Bool {
     return true
 }
 
+// MochiLoad: if an operation fails only because minimuxer hasn't loaded the pairing file yet (for example,
+// the person just paired, or the app launched before pairing), load it and try once more.
+nonisolated(unsafe) private var mochiIsAutoStartingMinimuxer = false
+
+private func mochiIsPairingNotLoaded(_ error: Error) -> Bool {
+    if let minimuxerError = error as? MinimuxerError {
+        switch minimuxerError {
+        case .pairingNotLoaded, .notStarted: return true
+        default: return false
+        }
+    }
+    if let operationError = error as? OperationError {
+        switch operationError {
+        case .pairingNotComplete, .minimuxerNotStarted: return true
+        default: return false
+        }
+    }
+    return false
+}
+
+private func mochiStartMinimuxerIfPossible() async -> Bool {
+    #if targetEnvironment(simulator)
+    return false
+    #else
+    guard !mochiIsAutoStartingMinimuxer, let pairingFile = PairingFileManager.shared.fetchPairingFile() else { return false }
+    mochiIsAutoStartingMinimuxer = true
+    defer { mochiIsAutoStartingMinimuxer = false }
+    do {
+        debugLog("[SideStore] Pairing file exists but wasn't loaded; starting minimuxer automatically...")
+        await bindConnectionConfig()
+        try await minimuxer.core.start(pairingFile: pairingFile, mountPath: ddiMountPath, preferred: PairingFileManager.shared.preferredProtocol)
+        return true
+    } catch {
+        debugLog("[SideStore] Automatic minimuxer start failed: \(error)")
+        return false
+    }
+    #endif
+}
+
 private func withRemotePairingRetry<T>(_ operation: () async throws -> T) async throws -> T {
     do {
+        return try await operation()
+    } catch where mochiIsPairingNotLoaded(error) && !mochiIsAutoStartingMinimuxer {
+        guard await mochiStartMinimuxerIfPossible() else { throw error }
         return try await operation()
     } catch {
         guard UserDefaults.standard.isAutoRetryRemotePairingPortEnabled,

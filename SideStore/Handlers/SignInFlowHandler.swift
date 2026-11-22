@@ -452,19 +452,22 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
 
         return try await withCheckedThrowingContinuation { continuation in
             let alertController = UIAlertController(
-                title: NSLocalizedString("Revoke Certificates", comment: ""),
-                message: NSLocalizedString("Select iOS Development certificate(s) to revoke:", comment: ""),
+                // MochiLoad: plain-English explanation of the certificate limit.
+                title: NSLocalizedString("Replace an Old Certificate?", comment: ""),
+                message: teamType == .free
+                    ? NSLocalizedString("A free Apple ID can only keep 2 signing certificates, and yours are already used (for example by a computer or another sideloading app). MochiLoad needs to replace one to sign your apps.\n\nApps that were signed with the replaced one may stop opening. Open MochiLoad and refresh them to fix that.", comment: "")
+                    : NSLocalizedString("Choose the certificates to replace. Apps signed with them may stop opening until you refresh them in MochiLoad.", comment: ""),
                 preferredStyle: .alert
             )
             
             let revokeVC = RevokeCertificatesAlertViewController(certificates: certificates, teamType: teamType)
             alertController.setValue(revokeVC, forKey: "contentViewController")
             
-            let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
+            let cancelAction = UIAlertAction(title: NSLocalizedString("Not Now", comment: ""), style: .cancel) { _ in
                 if teamType == .free {
                     let warningAlert = UIAlertController(
                         title: NSLocalizedString("Warning", comment: ""),
-                        message: NSLocalizedString("MochiLoad cannot manage the existing certificate without owning its private key. The apps signed with the existing certificate will expire soon unless they are resigned and renewed explicitly by MochiLoad.", comment: ""),
+                        message: NSLocalizedString("Without replacing a certificate, MochiLoad can't sign apps yet. You can do it later by signing in again.", comment: ""),
                         preferredStyle: .alert
                     )
                     warningAlert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { _ in
@@ -484,7 +487,7 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
             if isPaid {
                 initialTitle = (initialCount == 0) ? "Continue Without Revoking" : "Revoke Selected (\(initialCount))"
             } else {
-                initialTitle = "Revoke"
+                initialTitle = NSLocalizedString("Replace", comment: "")
             }
             let actionStyle: UIAlertAction.Style = (isPaid && initialCount == 0) ? .default : .destructive
             let revokeAction = UIAlertAction(title: initialTitle, style: actionStyle) { _ in
@@ -580,7 +583,7 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
                 alertController.addAction(retryAction)
                 alertController.addAction(laterAction)
             } else {
-                let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
+                let cancelAction = UIAlertAction(title: NSLocalizedString("Not Now", comment: ""), style: .cancel) { _ in
                     alertController.dismiss(animated: true) {
                         continuation.resume(returning: .cancel)
                     }
@@ -630,7 +633,7 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
                 alertController.addAction(retryAction)
                 alertController.addAction(laterAction)
             } else {
-                let cancelAction = UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
+                let cancelAction = UIAlertAction(title: NSLocalizedString("Not Now", comment: ""), style: .cancel) { _ in
                     alertController.dismiss(animated: true) {
                         continuation.resume(returning: .cancel)
                     }

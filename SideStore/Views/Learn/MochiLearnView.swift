@@ -61,32 +61,17 @@ private let learnItems: [LearnItem] = [
               icon: "checkmark.seal"),
 ]
 
-struct MochiLearnView: View
+/// The explainer cards, used on the Home tab.
+struct MochiLearnCards: View
 {
-    @State private var openID: String? = "slots"
+    @State private var openID: String? = nil
 
     var body: some View {
-        ZStack {
-            MochiAuroraBackground()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(NSLocalizedString("Quick answers. No tech talk.", comment: ""))
-                        .font(.subheadline)
-                        .foregroundColor(MochiColors.mutedText)
-                        .padding(.bottom, 4)
-
-                    ForEach(learnItems) { item in
-                        self.card(for: item)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(learnItems) { item in
+                self.card(for: item)
             }
         }
-        .navigationTitle(NSLocalizedString("Learn", comment: ""))
-        .environment(\.colorScheme, .dark)
     }
 
     private func card(for item: LearnItem) -> some View
@@ -178,23 +163,5 @@ struct MochiLearnView: View
                 .stroke(filled ? Color.accentColor : Color.white.opacity(0.3),
                         style: StrokeStyle(lineWidth: 1.5, dash: filled ? [] : [5, 4]))
         )
-    }
-}
-
-/// Wraps the Learn screen for the UIKit tab bar.
-enum MochiLearnTab
-{
-    @MainActor
-    static func makeNavigationController() -> UINavigationController
-    {
-        let hosting = UIHostingController(rootView: MochiLearnView())
-        hosting.view.backgroundColor = UIColor(red: 11/255, green: 10/255, blue: 18/255, alpha: 1)
-        let navigationController = UINavigationController(rootViewController: hosting)
-        navigationController.navigationBar.prefersLargeTitles = true
-        navigationController.overrideUserInterfaceStyle = .dark
-        navigationController.tabBarItem = UITabBarItem(title: NSLocalizedString("Learn", comment: ""),
-                                                       image: UIImage(systemName: "book"),
-                                                       selectedImage: UIImage(systemName: "book.fill"))
-        return navigationController
     }
 }

@@ -91,8 +91,14 @@ final class PairingFileManager: NSObject {
         if let targetPreferred, let contents = fetchPairingFile(for: targetPreferred) {
             return contents
         }
-        if let persisted = persistedActiveProtocol {
-            return fetchPairingFile(for: persisted)
+        if let persisted = persistedActiveProtocol, let contents = fetchPairingFile(for: persisted) {
+            return contents
+        }
+        // MochiLoad: nothing chosen yet, so use whichever pairing file exists (newer remote pairing first).
+        for mode in [PairingProtocol.rppairing, .lockdown] {
+            if let contents = fetchPairingFile(for: mode) {
+                return contents
+            }
         }
         return nil
     }
@@ -135,6 +141,8 @@ final class PairingFileManager: NSObject {
         let (content, _) = try inspectPairingFile(from: url)
         let parsed = try savePairingFile(contents: content, preferred: preferred)
         persistedActiveProtocol = parsed.mode
+        // MochiLoad: a freshly imported file should be the one used.
+        preferredProtocol = parsed.mode
     }
 
     func deletePairingFile(for mode: PairingProtocol) {
