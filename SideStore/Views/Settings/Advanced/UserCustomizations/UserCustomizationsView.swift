@@ -40,6 +40,7 @@ struct UserCustomizationsView: View {
     @AppStorage(MochiBackgroundStyle.liveUserDefaultsKey) private var mochiLiveBackground: Bool = true
     @AppStorage(MochiAutomation.autoRefreshOnOpenKey) private var mochiAutoRefreshOnOpen: Bool = true
     @AppStorage(MochiRefreshLiveActivity.enabledKey) private var mochiRefreshLiveActivity: Bool = true
+    @AppStorage(MochiSelfUpdater.autoUpdateKey) private var mochiAutoUpdate: Bool = true
     // MochiLoad: "expires soon" reminders (see ExpiryReminderScheduler)
     @State private var expiryRemindersEnabled: Bool = ExpiryReminderScheduler.isEnabled
     @State private var isExportResignedAppEnabled: Bool = UserDefaults.standard.isExportResignedAppEnabled
@@ -353,7 +354,7 @@ struct UserCustomizationsView: View {
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text("Exports SideStore.conf to import into WireGuard VPN app")
+                                Text("Exports a WireGuard config to import into the WireGuard app")
                                     .font(.system(size: 12, weight: .regular))
                                     .foregroundColor(Color.white.opacity(0.6))
                                     .multilineTextAlignment(.leading)
@@ -857,6 +858,12 @@ struct UserCustomizationsView: View {
 
                 divider
 
+                toggleRow(title: "Update MochiLoad Automatically",
+                          subtitle: "When a new MochiLoad version is out, install it when you open the app (LocalDevVPN must be on). MochiLoad closes for a moment and sends a notification when it's ready.",
+                          isOn: $mochiAutoUpdate)
+
+                divider
+
                 toggleRow(title: "Lock Screen Progress",
                           subtitle: "Show a progress bar on the lock screen and Dynamic Island while apps refresh.",
                           isOn: $mochiRefreshLiveActivity)
@@ -886,7 +893,7 @@ struct UserCustomizationsView: View {
                 divider
                 
                 HStack {
-                    Text("Customize Extensions")
+                    Text("App Extras")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()

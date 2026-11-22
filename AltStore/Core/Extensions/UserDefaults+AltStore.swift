@@ -231,7 +231,7 @@ public extension UserDefaults
     
     var customizeAppExtensions: AppExtensionCustomization {
         get {
-            let option = _customizeAppExtensions.flatMap { AppExtensionCustomization(rawValue: $0) } ?? .promptUser
+            let option = _customizeAppExtensions.flatMap { AppExtensionCustomization(rawValue: $0) } ?? .mochiAuto
             return option
         }
         set {
@@ -567,7 +567,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.customizeAppId): false,
             #keyPath(UserDefaults.customizeAppIcon): false,
             #keyPath(UserDefaults.customizeProvisioningProfile): false,
-            #keyPath(UserDefaults._customizeAppExtensions): AppExtensionCustomization.promptUser.rawValue,
+            #keyPath(UserDefaults._customizeAppExtensions): AppExtensionCustomization.mochiAuto.rawValue, // MochiLoad: pick for the user
             #keyPath(UserDefaults._appImportSourceMode): AppImportSourceMode.prompt.rawValue,
             #keyPath(UserDefaults.isInstallConfirmationEnabled): true,
             #keyPath(UserDefaults.isClearCustomizationsOnUninstallEnabled): true,

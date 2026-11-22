@@ -99,30 +99,31 @@ final class PipelineHandler: PipelineExecutionHandler,
         }
         
         return try await withCheckedThrowingContinuation { continuation in
-            let firstSentence: String
-            if UserDefaults.standard.activeAppLimitIncludesExtensions {
-                firstSentence = NSLocalizedString("Non-developer Apple IDs are limited to 3 active apps and app extensions.", comment: "")
-            } else {
-                firstSentence = NSLocalizedString("Non-developer Apple IDs are limited to creating 10 App IDs per week.", comment: "")
-            }
-            
-            let message = firstSentence + " " + NSLocalizedString("Would you like to remove this app's extensions so they don't count towards your limit? There are \(appBundle.appExtensions.count) Extensions", comment: "")
-            
-            let alertController = UIAlertController(title: NSLocalizedString("App Contains Extensions", comment: ""), message: message, preferredStyle: .alert)
+            // MochiLoad: plain English, and the option MochiLoad would pick is marked.
+            let count = appBundle.appExtensions.count
+            let recommended = RemoveAppExtensionsOperation.mochiAutoDecision(for: appBundle, installedApp: nil)
+            let recommendsKeeping: Bool = { if case .keepAll = recommended { return true } else { return false } }()
+
+            let extras = count == 1 ? NSLocalizedString("1 extra", comment: "") : String(format: NSLocalizedString("%d extras", comment: ""), count)
+            let message = String(format: NSLocalizedString("%@ comes with %@, like widgets or share buttons. Each extra uses 1 of the 10 App IDs a free Apple ID gets per week. The app itself works fine without them.", comment: ""), appBundle.name, extras)
+
+            let alertController = UIAlertController(title: NSLocalizedString("Keep the Extras?", comment: ""), message: message, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: UIAlertAction.cancel.title, style: UIAlertAction.cancel.style, handler: { _ in
                 continuation.resume(throwing: OperationError.cancelled)
             }))
-            alertController.addAction(UIAlertAction(title: NSLocalizedString("Keep App Extensions (Use Main Profile)", comment: ""), style: .default) { _ in
-                continuation.resume(returning: .keepAll(useMainProfile: true))
-            })
-            alertController.addAction(UIAlertAction(title: NSLocalizedString("Keep App Extensions (Register App ID for Each Extension)", comment: ""), style: .default) { _ in
+            let keepTitle = recommendsKeeping ? NSLocalizedString("Keep Extras (Recommended)", comment: "") : NSLocalizedString("Keep Extras", comment: "")
+            let keepAction = UIAlertAction(title: keepTitle, style: .default) { _ in
                 continuation.resume(returning: .keepAll(useMainProfile: false))
-            })
-            alertController.addAction(UIAlertAction(title: NSLocalizedString("Remove App Extensions", comment: ""), style: .destructive) { _ in
+            }
+            alertController.addAction(keepAction)
+            let removeTitle = recommendsKeeping ? NSLocalizedString("Remove Extras", comment: "") : NSLocalizedString("Remove Extras (Recommended)", comment: "")
+            let removeAction = UIAlertAction(title: removeTitle, style: .default) { _ in
                 continuation.resume(returning: .removeAll)
-            })
+            }
+            alertController.addAction(removeAction)
+            alertController.preferredAction = recommendsKeeping ? keepAction : removeAction
             
-            alertController.addAction(UIAlertAction(title: NSLocalizedString("Choose App Extensions", comment: ""), style: .default) { _ in
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Choose Extras…", comment: ""), style: .default) { _ in
                 let popoverContentController = AppExtensionViewHostingController(extensions: appBundle.appExtensions) { selection in
                     continuation.resume(returning: .removeSelected(Set(selection)))
                 }
@@ -183,7 +184,7 @@ final class PipelineHandler: PipelineExecutionHandler,
                 let alert = UIAlertController(
                     title: "Finish Refresh",
                     message: """
-                    To finish refreshing, SideStore must be moved to the background. To do this, you can either go to the Home Screen manually or by hitting Continue. Please reopen SideStore after doing this.
+                    To finish refreshing, MochiLoad needs to go to the background. Tap Continue (or go to the Home Screen), then open MochiLoad again.
                     """,
                     preferredStyle: .alert
                 )

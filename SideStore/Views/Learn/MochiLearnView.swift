@@ -59,6 +59,11 @@ private let learnItems: [LearnItem] = [
               short: NSLocalizedString("Proof the apps were signed by you.", comment: ""),
               answer: NSLocalizedString("A certificate is how your iPhone knows an app was signed by your Apple ID. MochiLoad makes and renews it for you. You can see it in Settings.", comment: ""),
               icon: "checkmark.seal"),
+    LearnItem(id: "updates",
+              question: NSLocalizedString("How does MochiLoad update?", comment: ""),
+              short: NSLocalizedString("By itself, when you open it.", comment: ""),
+              answer: NSLocalizedString("When a new version is out, MochiLoad installs it the next time you open it with LocalDevVPN on. It closes for a moment while it swaps itself out, then a notification says it's ready. Your apps, sign-in and pairing stay. You can also tap Update on Home.", comment: ""),
+              icon: "arrow.down.circle"),
 ]
 
 /// The explainer cards, used on the Home tab.

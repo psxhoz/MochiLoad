@@ -20,6 +20,8 @@ extension Notification.Name
     static let mochiOpenSettings = Notification.Name("mochi.openSettings")
     /// Home asks the tab bar to switch to My Apps (to update MochiLoad).
     static let mochiOpenMyApps = Notification.Name("mochi.openMyApps")
+    /// Home asks the tab bar to install the new MochiLoad version.
+    static let mochiUpdateMochiLoad = Notification.Name("mochi.updateMochiLoad")
 }
 
 enum MochiAutomation
@@ -79,8 +81,8 @@ final class MochiHomeViewModel: ObservableObject
     /// nil while checking.
     @Published var isConnected: Bool?
     @Published var apps: [MochiHomeApp] = []
-    /// Newer MochiLoad version from the source, if any.
-    @Published var updateVersion: String?
+    /// App icons by bundle ID, loaded once.
+    @Published var icons: [String: UIImage] = [:]
 
     private var connectionTask: Task<Void, Never>?
 
@@ -100,18 +102,23 @@ final class MochiHomeViewModel: ObservableObject
                 self.accountName = nil
             }
 
-            if let mochiLoad = InstalledApp.fetchAltStore(in: context), mochiLoad.hasUpdate
-            {
-                self.updateVersion = mochiLoad.storeApp?.latestSupportedVersion?.version
-            }
-            else
-            {
-                self.updateVersion = nil
-            }
+            MochiSelfUpdater.shared.reloadAvailableVersion()
 
-            self.apps = InstalledApp.fetchActiveApps(in: context)
+            let installedApps = InstalledApp.fetchActiveApps(in: context)
+            self.apps = installedApps
                 .map { MochiHomeApp(id: $0.bundleIdentifier, name: $0.name, refreshedDate: $0.refreshedDate, expirationDate: $0.expirationDate) }
                 .sorted { $0.expirationDate < $1.expirationDate }
+
+            for installedApp in installedApps where self.icons[installedApp.bundleIdentifier] == nil
+            {
+                let bundleID = installedApp.bundleIdentifier
+                Task { [weak self] in
+                    if let icon = try? await installedApp.loadIcon()
+                    {
+                        self?.icons[bundleID] = icon
+                    }
+                }
+            }
         }
 
         self.connectionTask?.cancel()
@@ -151,6 +158,7 @@ final class MochiHomeViewModel: ObservableObject
 struct MochiHomeView: View
 {
     @StateObject private var model = MochiHomeViewModel()
+    @ObservedObject private var updater = MochiSelfUpdater.shared
     @Environment(\.scenePhase) private var scenePhase
 
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
@@ -166,9 +174,10 @@ struct MochiHomeView: View
                         .foregroundColor(MochiColors.mutedText)
                         .padding(.top, 4)
 
-                    if let version = self.model.updateVersion
+                    if let version = self.updater.availableVersion
                     {
                         self.updateCard(version: version)
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     self.heroCard
@@ -191,7 +200,11 @@ struct MochiHomeView: View
         }
         .navigationTitle(NSLocalizedString("Home", comment: ""))
         .environment(\.colorScheme, .dark)
-        .onAppear { self.model.reload() }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: self.updater.availableVersion)
+        .onAppear {
+            self.model.reload()
+            Task { await self.updater.checkForUpdate() }
+        }
         .onReceive(self.timer) { _ in self.model.reload() }
         .onChange(of: self.scenePhase) { phase in
             if phase == .active { self.model.reload() }
@@ -285,35 +298,64 @@ struct MochiHomeView: View
 
     private func updateCard(version: String) -> some View
     {
-        HStack(spacing: 14) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color.accentColor)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(Color.accentColor.opacity(0.18)))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
+                Image(systemName: self.updater.isUpdating ? "arrow.down.circle" : "sparkles")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color.accentColor)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color.accentColor.opacity(0.18)))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(NSLocalizedString("MochiLoad update ready", comment: ""))
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(MochiColors.text)
-                Text(String(format: NSLocalizedString("Version %@. Your apps and sign-in stay.", comment: ""), version))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(self.updater.isUpdating
+                         ? NSLocalizedString("Updating MochiLoad…", comment: "")
+                         : NSLocalizedString("MochiLoad update ready", comment: ""))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(MochiColors.text)
+                    Text(self.updater.isUpdating
+                         ? NSLocalizedString("It closes by itself when done. Open it again from the notification.", comment: "")
+                         : String(format: NSLocalizedString("Version %@. Your apps and sign-in stay.", comment: ""), version))
+                        .font(.footnote)
+                        .foregroundColor(MochiColors.mutedText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if !self.updater.isUpdating
+                {
+                    SwiftUI.Button {
+                        NotificationCenter.default.post(name: .mochiUpdateMochiLoad, object: nil)
+                    } label: {
+                        Text(NSLocalizedString("Update", comment: ""))
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(Color.accentColor))
+                            .foregroundColor(MochiColors.ink)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if self.updater.isUpdating
+            {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.08))
+                        Capsule().fill(Color.accentColor)
+                            .frame(width: max(geometry.size.width * self.updater.progress, 8))
+                            .animation(.easeOut(duration: 0.3), value: self.updater.progress)
+                    }
+                }
+                .frame(height: 6)
+            }
+            else if self.model.isConnected != true
+            {
+                Text(NSLocalizedString("Turn on LocalDevVPN first, then tap Update.", comment: ""))
                     .font(.footnote)
-                    .foregroundColor(MochiColors.mutedText)
+                    .foregroundColor(MochiColors.warning)
             }
-
-            Spacer(minLength: 8)
-
-            SwiftUI.Button {
-                NotificationCenter.default.post(name: .mochiOpenMyApps, object: nil)
-            } label: {
-                Text(NSLocalizedString("Update", comment: ""))
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.accentColor))
-                    .foregroundColor(MochiColors.ink)
-            }
-            .buttonStyle(.plain)
         }
         .padding(16)
         .mochiGlass(cornerRadius: 22)
@@ -429,15 +471,25 @@ struct MochiHomeView: View
                     Divider().background(Color.white.opacity(0.08)).padding(.leading, 66)
                 }
                 HStack(spacing: 14) {
-                    Text(String(app.name.prefix(1)).uppercased())
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .fill(LinearGradient(colors: [Color.accentColor, app.color.opacity(0.8)],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                        )
+                    Group {
+                        if let icon = self.model.icons[app.id]
+                        {
+                            Image(uiImage: icon)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        }
+                        else
+                        {
+                            Text(String(app.name.prefix(1)).uppercased())
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(LinearGradient(colors: [Color.accentColor, app.color.opacity(0.8)],
+                                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        }
+                    }
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {

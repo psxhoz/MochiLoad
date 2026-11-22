@@ -524,7 +524,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Support the SideStore Team by following our socials or becoming a patron!", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Support the people who make MochiLoad possible.", comment: "")
             }
 
         case .account:
@@ -643,6 +643,9 @@ private extension SettingsViewController
 
         // MochiLoad: storage tools and logs only in advanced mode.
         case .techyThings: return !SettingsViewController.mochiShowsAdvanced
+
+        // MochiLoad: debug tools only in advanced mode, so Credits stays at the bottom.
+        case .diagnostics: return !SettingsViewController.mochiShowsAdvanced
 
         default: return false
         }

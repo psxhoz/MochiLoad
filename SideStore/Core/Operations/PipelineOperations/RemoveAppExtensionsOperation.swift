@@ -11,6 +11,8 @@ import Foundation
 import SideSign
 
 public enum AppExtensionCustomization: String, CaseIterable, Identifiable, Sendable {
+    /// MochiLoad default: decides by itself (see `mochiAutoDecision`).
+    case mochiAuto      = "mochi-auto"
     case promptUser     = "prompt-user"
     case removeAll      = "remove-all"
     case keepAll        = "keep-all"
@@ -20,8 +22,10 @@ public enum AppExtensionCustomization: String, CaseIterable, Identifiable, Senda
 
     public var displayName: String {
         switch self {
+        case .mochiAuto:
+            return "Automatic (Recommended)"
         case .promptUser:
-            return "Prompt User"
+            return "Ask Every Time"
         case .removeAll:
             return "Remove All"
         case .keepAll:
@@ -33,7 +37,7 @@ public enum AppExtensionCustomization: String, CaseIterable, Identifiable, Senda
 
     var fixedDecision: ExtensionRemovalDecision? {
         switch self {
-        case .promptUser:
+        case .mochiAuto, .promptUser:
             return nil
         case .removeAll:
             return .removeAll
@@ -79,8 +83,12 @@ final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperat
         
         let handler = self.context.handler.extensionRemovalHandler
         let decision: ExtensionRemovalDecision
-        if let preset = UserDefaults.standard.customizeAppExtensions.fixedDecision {
+        let setting = UserDefaults.standard.customizeAppExtensions
+        if let preset = setting.fixedDecision {
             decision = preset
+        } else if setting == .mochiAuto {
+            decision = Self.mochiAutoDecision(for: targetAppBundle, installedApp: self.context.installedApp)
+            debugLog("[RemoveAppExtensionsOperation] MochiLoad picked \(decision) for \(targetAppBundle.bundleIdentifier)")
         } else {
             self.setProgress(50)
             decision = try await handler.selectAppExtensionsToRemove(
@@ -111,6 +119,25 @@ final class RemoveAppExtensionsOperation: BasePipelineOperation<InstallAppOperat
         return targetAppBundle
     }
     
+    /// MochiLoad: pick the best option without asking.
+    /// - MochiLoad and other apps from MochiLoad's own list keep their extensions (widgets, lock screen progress).
+    /// - An app that was installed before keeps whatever it had last time, so updates and refreshes stay the same.
+    /// - New apps with a few extensions keep them; apps with many drop them, because each one uses up
+    ///   one of the 10 App IDs a free Apple ID gets per week, and the app works fine without them.
+    static func mochiAutoDecision(for appBundle: ALTApplication, installedApp: InstalledApp?) -> ExtensionRemovalDecision {
+        let bundleID = appBundle.bundleIdentifier
+        if bundleID.hasPrefix("com.psxhoz.") || bundleID == Bundle.Info.appbundleIdentifier {
+            return .keepAll(useMainProfile: false)
+        }
+
+        if let installedApp {
+            let hadExtensions: Bool = installedApp.managedObjectContext?.performAndWait { !installedApp.appExtensions.isEmpty } ?? !installedApp.appExtensions.isEmpty
+            return hadExtensions ? .keepAll(useMainProfile: false) : .removeAll
+        }
+
+        return appBundle.appExtensions.count <= 2 ? .keepAll(useMainProfile: false) : .removeAll
+    }
+
     private func removeExtensions(from extensions: Set<ALTApplication>, endPercent: Int64) throws {
         let isLoggingEnabled = OperationsLoggingControl.isLoggingEnabled(for: RemoveAppExtensionsOperation.self)
         let startProgress = self.progress.completedUnitCount
