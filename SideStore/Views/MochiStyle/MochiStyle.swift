@@ -155,7 +155,6 @@ extension View
     func mochiSectionLabel() -> some View
     {
         self.font(.system(size: 12, weight: .semibold))
-            .tracking(0.9)
             .textCase(.uppercase)
             .foregroundColor(MochiColors.mutedText)
     }
