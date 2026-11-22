@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p build/logs
           set -o pipefail
-          make build 2>&1 | tee build/logs/build.log | tail -n 200
+          make -B build 2>&1 | tee build/logs/build.log | tail -n 200
           make fakesign
           make ipa
           mv SideStore.ipa MochiChanger.ipa
