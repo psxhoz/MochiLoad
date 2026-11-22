@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.14",
-          "buildVersion": "14",
-          "date": "2026-11-22T06:29:12Z",
-          "localizedDescription": "Home tab, automatic refresh when opened, easier pairing.",
+          "version": "1.0.15",
+          "buildVersion": "15",
+          "date": "2026-11-22T18:15:19Z",
+          "localizedDescription": "App list, self-updates, certificate backup, rebrand sweep, readable toasts, widgets",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38664167,
+          "size": 38696500,
           "minOSVersion": "15.0"
         }
       ],
