@@ -226,6 +226,9 @@ final class SettingsViewController: UITableViewController
     {
         super.viewDidLoad()
         
+        // MochiLoad: replace SideStore's "Follow SideStore for updates" footer and social buttons.
+        self.mochiInstallFooter()
+        
         #if !os(tvOS)
         // --- iOS 26 fix ---
         if #available(iOS 26.0, *) {
@@ -1416,3 +1419,19 @@ extension SettingsViewController: INUIAddVoiceShortcutViewControllerDelegate
     }
 }
 #endif
+
+// MochiLoad
+extension SettingsViewController
+{
+    fileprivate func mochiInstallFooter()
+    {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let label = UILabel()
+        label.text = String(format: NSLocalizedString("MochiLoad %@", comment: ""), version)
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.textColor = UIColor.white.withAlphaComponent(0.45)
+        label.textAlignment = .center
+        label.frame = CGRect(x: 0, y: 0, width: self.tableView.bounds.width, height: 60)
+        self.tableView.tableFooterView = label
+    }
+}

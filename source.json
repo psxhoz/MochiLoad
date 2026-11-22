@@ -5,7 +5,61 @@
   "iconURL": "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/assets/icon.png",
   "website": "https://github.com/psxhoz/MochiLoad",
   "tintColor": "A78BFA",
-  "featuredApps": [],
-  "apps": [],
+  "featuredApps": [
+    "com.psxhoz.mochilocation"
+  ],
+  "apps": [
+    {
+      "name": "MochiLoad",
+      "bundleIdentifier": "com.psxhoz.MochiLoad",
+      "developerName": "psxhoz",
+      "subtitle": "Install and refresh apps, no computer needed.",
+      "localizedDescription": "MochiLoad installs apps the App Store doesn't have and keeps them working by refreshing them before they expire.\n\nUpdating here keeps your apps, your sign-in and your pairing.",
+      "iconURL": "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/assets/icon.png",
+      "tintColor": "A78BFA",
+      "category": "utilities",
+      "versions": [
+        {
+          "version": "1.0.14",
+          "buildVersion": "14",
+          "date": "2026-11-22T06:29:12Z",
+          "localizedDescription": "Home tab, automatic refresh when opened, easier pairing.",
+          "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
+          "size": 38664167,
+          "minOSVersion": "15.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    },
+    {
+      "name": "MochiChange",
+      "bundleIdentifier": "com.psxhoz.mochilocation",
+      "developerName": "psxhoz",
+      "subtitle": "Change your iPhone's location from the iPhone itself.",
+      "localizedDescription": "Jump anywhere, or walk, run, bike, drive, fly or sail along real routes. Real traffic lights, speed limits, saved routes, joystick and more.\n\nNeeds iOS 17.4 or later, Developer Mode and LocalDevVPN.",
+      "iconURL": "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/assets/mochichange.png",
+      "tintColor": "5EEAD4",
+      "category": "utilities",
+      "versions": [
+        {
+          "version": "1.0",
+          "buildVersion": "1",
+          "date": "2026-11-21T22:25:47Z",
+          "localizedDescription": "Latest build.",
+          "downloadURL": "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/apps/MochiChange.ipa",
+          "size": 16552318,
+          "sha256": "12f341d83bac24ba23b7c40cb33b55204a137c0733cbecd771c73945b71bccb2",
+          "minOSVersion": "17.4"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    }
+  ],
   "news": []
 }

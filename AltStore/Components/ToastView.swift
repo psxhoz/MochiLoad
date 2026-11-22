@@ -87,9 +87,12 @@ class ToastView: UIControl
         self.textLabel.text = text
         self.detailTextLabel.text = detailedText
 
-        self.backgroundColor = .altPrimary
+        // MochiLoad: dark glass bubble with white text (readable on any screen).
+        self.backgroundColor = UIColor(red: 28/255, green: 22/255, blue: 48/255, alpha: 0.96)
+        self.layer.borderWidth = 1
+        self.layer.borderColor = UIColor.altPrimary.withAlphaComponent(0.6).cgColor
         self.textLabel.textColor = .white
-        self.detailTextLabel.textColor = .white
+        self.detailTextLabel.textColor = UIColor.white.withAlphaComponent(0.82)
 
         self.isAccessibilityElement = true
 

@@ -61,6 +61,17 @@ public final class CertificateManager: @unchecked Sendable {
     public func loadActiveCertificate() throws -> ActiveSigningCertificate? {
         guard let data = Keychain.shared.signingCertificate else {
             debugLog("[CertificateManager] loadActiveCertificate: No signingCertificate data found in Keychain.")
+            // MochiLoad: reinstalling through another signer can hide the old Keychain items.
+            // Restore from the backup kept in the app's own storage, if there is one.
+            if let restored = Self.mochiRestoreBackup()
+            {
+                try? self.setActiveCertificate(restored)
+                if let active = self.activeCertificate
+                {
+                    debugLog("[CertificateManager] loadActiveCertificate: Restored certificate \(restored.serialNumber) from backup.")
+                    return active
+                }
+            }
             self.activeCertificate = nil
             return nil
         }
@@ -94,6 +105,7 @@ public final class CertificateManager: @unchecked Sendable {
                 let p12Data = try Self.convert(cert, password: password)
                 Keychain.shared.signingCertificate = p12Data
                 Keychain.shared.signingCertificatePassword = password
+                Self.mochiWriteBackup(p12Data: p12Data, serialNumber: cert.serialNumber)
                 saveCertificate(cert)
                 let active = ActiveSigningCertificate(certificate: cert, p12Data: p12Data, password: password)
                 self.activeCertificate = active
@@ -105,8 +117,48 @@ public final class CertificateManager: @unchecked Sendable {
         } else {
             self.activeCertificate = nil
             Keychain.shared.clearCertificates()
+            Self.mochiDeleteBackup()
             debugLog("[CertificateManager] setActiveCertificate: Cleared active certificate in Keychain.")
         }
+    }
+
+    // MARK: - MochiLoad certificate backup
+
+    /// Application Support/MochiLoad/SigningCertificate/<serial>.p12 (encrypted with the serial, like the Keychain copy).
+    private static var mochiBackupDirectory: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("MochiLoad", isDirectory: true)
+            .appendingPathComponent("SigningCertificate", isDirectory: true)
+    }
+
+    private static func mochiWriteBackup(p12Data: Data, serialNumber: String) {
+        guard let directory = self.mochiBackupDirectory else { return }
+        do {
+            try? FileManager.default.removeItem(at: directory)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let url = directory.appendingPathComponent(serialNumber).appendingPathExtension("p12")
+            try p12Data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            var mutableURL = url
+            try? mutableURL.setResourceValues(values)
+        } catch {
+            debugLog("[CertificateManager] Could not write certificate backup: \(error)")
+        }
+    }
+
+    private static func mochiRestoreBackup() -> ALTCertificate? {
+        guard let directory = self.mochiBackupDirectory,
+              let file = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                .first(where: { $0.pathExtension == "p12" }),
+              let data = try? Data(contentsOf: file) else { return nil }
+        let serialNumber = file.deletingPathExtension().lastPathComponent
+        return try? Self.parse(data, password: serialNumber)
+    }
+
+    private static func mochiDeleteBackup() {
+        guard let directory = self.mochiBackupDirectory else { return }
+        try? FileManager.default.removeItem(at: directory)
     }
 
     /// Clears active certificate in memory cache and Keychain.

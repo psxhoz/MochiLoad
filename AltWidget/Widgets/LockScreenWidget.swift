@@ -26,7 +26,7 @@ struct TextLockScreenWidget: Widget
                 ComplicationView(apps: entry.apps, date: entry.date, isPlaceholder: entry.isPlaceholder, style: .text)
             }
             .supportedFamilies([.accessoryCircular])
-            .configurationDisplayName("AltWidget (Text)")
+            .configurationDisplayName("MochiLoad Countdown")
             .description("View remaining days until MochiLoad expires.")
         }
         else
@@ -35,7 +35,7 @@ struct TextLockScreenWidget: Widget
                 UnsupportedWidgetView(requiredVersion: "iOS 16")
             }
             .supportedFamilies([.systemSmall])
-            .configurationDisplayName("AltWidget (Text)")
+            .configurationDisplayName("MochiLoad Countdown")
             .description("Requires iOS 16 or later.")
         }
     }
@@ -58,7 +58,7 @@ struct IconLockScreenWidget: Widget
                 ComplicationView(apps: entry.apps, date: entry.date, isPlaceholder: entry.isPlaceholder, style: .icon)
             }
             .supportedFamilies([.accessoryCircular])
-            .configurationDisplayName("AltWidget (Icon)")
+            .configurationDisplayName("MochiLoad Icon")
             .description("View remaining days until MochiLoad expires.")
         }
         else
@@ -67,7 +67,7 @@ struct IconLockScreenWidget: Widget
                 UnsupportedWidgetView(requiredVersion: "iOS 16")
             }
             .supportedFamilies([.systemSmall])
-            .configurationDisplayName("AltWidget (Icon)")
+            .configurationDisplayName("MochiLoad Icon")
             .description("Requires iOS 16 or later.")
         }
     }

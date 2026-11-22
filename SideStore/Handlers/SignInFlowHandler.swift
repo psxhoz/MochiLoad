@@ -454,9 +454,7 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
             let alertController = UIAlertController(
                 // MochiLoad: plain-English explanation of the certificate limit.
                 title: NSLocalizedString("Replace an Old Certificate?", comment: ""),
-                message: teamType == .free
-                    ? NSLocalizedString("A free Apple ID can only keep 2 signing certificates, and yours are already used (for example by a computer or another sideloading app). MochiLoad needs to replace one to sign your apps.\n\nApps that were signed with the replaced one may stop opening. Open MochiLoad and refresh them to fix that.", comment: "")
-                    : NSLocalizedString("Choose the certificates to replace. Apps signed with them may stop opening until you refresh them in MochiLoad.", comment: ""),
+                message: Self.mochiReplaceMessage(certificates: certificates, teamType: teamType),
                 preferredStyle: .alert
             )
             
@@ -770,6 +768,34 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
             }))
             
             presenter.present(alert, animated: true)
+        }
+    }
+}
+
+// MochiLoad: say why a certificate needs replacing, in plain words, for the actual situation.
+extension SignInFlowHandler
+{
+    static func mochiReplaceMessage(certificates: [ALTX509Certificate], teamType: ALTTeamType) -> String
+    {
+        let consequence = NSLocalizedString("Apps that were signed with the replaced one may stop opening. Open MochiLoad and refresh them to fix that.", comment: "")
+
+        guard teamType == .free else {
+            return NSLocalizedString("Choose the certificates to replace.", comment: "") + "\n\n" + consequence
+        }
+
+        let madeByMochiLoad = certificates.contains { ($0.machineName ?? $0.name).hasPrefix("MochiLoad") || ($0.machineName ?? "").hasPrefix("SideStore") }
+
+        if certificates.count >= 2
+        {
+            return NSLocalizedString("A free Apple ID can only keep 2 signing certificates, and both are in use (for example by a computer or another sideloading app). MochiLoad needs to replace one to sign your apps.", comment: "") + "\n\n" + consequence
+        }
+        else if madeByMochiLoad
+        {
+            return NSLocalizedString("This Apple ID already has a certificate from MochiLoad, but this copy of MochiLoad can't use it (this happens after reinstalling). Replace it with a new one.", comment: "") + "\n\n" + consequence
+        }
+        else
+        {
+            return NSLocalizedString("This Apple ID has a certificate made by another tool, and MochiLoad can't use it. Replace it, or tap Not Now to keep it.", comment: "") + "\n\n" + consequence
         }
     }
 }
