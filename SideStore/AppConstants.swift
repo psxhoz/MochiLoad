@@ -69,8 +69,9 @@ public enum AppConstants {
         public static var defaultODAMetadataURLString: String { defaultODAMetadataURL.absoluteString }
 
         // Proxied from upstream SideSign
-        public static let defaultClientInfo           = Constants.Anisette.defaultClientInfo
-        public static let defaultUserAgent            = Constants.Anisette.defaultUserAgent
+        // MochiLoad: Apple refuses "<macOS;" since 2026-11-20, so use the "Mac OS X" spelling.
+        public static let defaultClientInfo           = "<MacBookPro18,3> <Mac OS X;26.6;25F84> <com.apple.AuthKit/1 (com.apple.akd/1.0)>"
+        public static let defaultUserAgent            = "AuthKit/1 (Macintosh; OS X 26.6) (com.apple.akd/1.0)"
 
         public enum URLs {
             public static let grandSlamLookup = Constants.Anisette.URLs.grandSlamLookup

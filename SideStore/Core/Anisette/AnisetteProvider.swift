@@ -11,40 +11,9 @@ import SideSign
 
 enum AnisetteProvider {
     static func fetch(handler: AnisetteServerHandler? = nil) async throws -> ALTAnisetteData {
-        if UserDefaults.standard.useOnDeviceAnisette {
-            debugLog("[AnisetteProvider] Fetching anisette via On-Device Anisette (ODA)...")
-            do {
-                return try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
-            } catch let onDeviceError {
-                // MochiLoad: Apple sometimes rejects on-device provisioning (HTTP 401 from PTM/TK), and the
-                // half-finished attempt then blocks the next one ("Pending ADI session"). Clear it and use
-                // the remote servers instead, and remember that choice so sign-in and refresh keep working.
-                debugLog("[AnisetteProvider] ODA failed (\(onDeviceError.localizedDescription)); falling back to remote servers")
-                await OnDeviceAnisetteManager.shared.resetProvisioningState()
-                do {
-                    let data = try await fetchRemote(handler: handler)
-                    UserDefaults.standard.useOnDeviceAnisette = false
-                    return data
-                } catch {
-                    debugLog("[AnisetteProvider] Remote fallback failed too: \(error.localizedDescription)")
-                    throw onDeviceError
-                }
-            }
-        } else {
-            debugLog("[AnisetteProvider] Fetching anisette via remote server...")
-            do {
-                return try await fetchRemote(handler: handler)
-            } catch let remoteError {
-                // MochiLoad: if every server is down, try the on-device way before giving up.
-                debugLog("[AnisetteProvider] Remote failed (\(remoteError.localizedDescription)); trying ODA")
-                do {
-                    return try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
-                } catch {
-                    await OnDeviceAnisetteManager.shared.resetProvisioningState()
-                    throw remoteError
-                }
-            }
-        }
+        // MochiLoad: try several sign-in helpers in order and remember the one that works.
+        // See MochiAnisette.swift for why.
+        return try await MochiAnisette.fetch(handler: handler)
     }
 
     private static func fetchRemote(handler: AnisetteServerHandler? = nil) async throws -> ALTAnisetteData {

@@ -552,7 +552,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.menuAnisetteURL): AppConstants.Anisette.Servers.defaultServerURL,
             #keyPath(UserDefaults.isAnisetteOfflineMode): false,
             #keyPath(UserDefaults.disableAnisetteRotation): false,
-            #keyPath(UserDefaults.useOnDeviceAnisette): true,
+            #keyPath(UserDefaults.useOnDeviceAnisette): false, // MochiLoad: Apple rejects on-device provisioning (Nov 2026)
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.acceptIPv6ConnectionConfig): false,
             #keyPath(UserDefaults.isAutoRetryRemotePairingPortEnabled): true,

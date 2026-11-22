@@ -33,7 +33,7 @@ public class InstalledExtension: BaseEntity, InstalledAppProtocol
         super.init(entity: entity, insertInto: context)
     }
     
-    public init(resignedAppExtensionBundle: ALTApplication, originalBundleIdentifier: String, context: NSManagedObjectContext) throws
+    public init(resignedAppExtensionBundle: ALTApplication, originalBundleIdentifier: String, context: NSManagedObjectContext, fallbackExpirationDate: Date? = nil) throws
     {
         super.init(entity: InstalledExtension.entity(), insertInto: context)
         
@@ -45,7 +45,9 @@ public class InstalledExtension: BaseEntity, InstalledAppProtocol
         #if targetEnvironment(simulator)
         self.expirationDate = self.refreshedDate.addingTimeInterval(60 * 60 * 24 * 7)
         #else
-        guard let expirationDate = resignedAppExtensionBundle.provisioningProfile?.expirationDate else {
+        // MochiLoad: some installers sign extensions without embedding their own profile.
+        // The extension expires with its app, so use the app's date instead of failing.
+        guard let expirationDate = resignedAppExtensionBundle.provisioningProfile?.expirationDate ?? fallbackExpirationDate else {
             throw ALTError.invalidApp(reason: "The app extension is missing a valid provisioning profile.")
         }
         self.expirationDate = expirationDate
