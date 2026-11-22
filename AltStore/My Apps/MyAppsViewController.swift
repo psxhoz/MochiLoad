@@ -2909,3 +2909,12 @@ extension MyAppsViewController {
         self.resign(installedApp)
     }
 }
+
+// MochiLoad: lets the Home tab and "Refresh When Opened" start Refresh All.
+extension MyAppsViewController
+{
+    func mochiStartRefreshAll()
+    {
+        self.refreshAllApps(UIBarButtonItem())
+    }
+}

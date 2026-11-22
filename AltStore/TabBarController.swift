@@ -225,7 +225,7 @@ extension TabBarController
         self.mochiMakeSelectedTabTransparent()
         myApps.loadViewIfNeeded()
         DispatchQueue.main.async {
-            myApps.refreshAllApps(UIBarButtonItem())
+            myApps.mochiStartRefreshAll()
         }
     }
     
@@ -269,7 +269,7 @@ extension TabBarController
             guard let myApps = self.mochiMyAppsViewController else { return }
             debugLog("[MochiLoad] Apps expire within 2 days; refreshing automatically.")
             myApps.loadViewIfNeeded()
-            myApps.refreshAllApps(UIBarButtonItem())
+            myApps.mochiStartRefreshAll()
         }
     }
 }
