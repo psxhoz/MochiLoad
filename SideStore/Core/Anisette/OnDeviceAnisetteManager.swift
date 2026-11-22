@@ -39,6 +39,16 @@ public actor OnDeviceAnisetteManager {
         provider.provisioningDir
     }
 
+    /// MochiLoad: remove leftover provisioning files from a failed attempt so the next one starts clean.
+    public func resetProvisioningState() {
+        let dir = provider.provisioningDir
+        guard let items = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
+        for item in items {
+            try? FileManager.default.removeItem(at: item)
+        }
+        debugLog("[OnDeviceAnisetteManager] Cleared provisioning state after a failed attempt")
+    }
+
     public func isReady() async -> Bool {
         provider.isReady()
     }

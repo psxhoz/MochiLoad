@@ -133,6 +133,14 @@ open class PersistentContainer: NSPersistentContainer, @unchecked Sendable {
             }
         }
         
+        // MochiLoad: if an earlier start attempt already opened the database (and then failed at a later
+        // step), opening it again fails with "Can't add the same store twice" and hides the real error.
+        if !self.persistentStoreCoordinator.persistentStores.isEmpty
+        {
+            self.configure(self.viewContext, parent: nil)
+            return
+        }
+
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             super.loadPersistentStores { [weak self] description, error in
                 guard let self = self else { return }
