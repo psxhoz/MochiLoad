@@ -39,6 +39,8 @@ enum MochiAnisette
 
     enum Method: String, CaseIterable
     {
+        /// What fixed real SideStore for us: SideStore's "New" server, fresh provisioning.
+        case sideStoreNewProvisioning
         /// Ready-made headers from a Mac-backed server (no provisioning on our side).
         case macServerHeaders
         /// v3 provisioning through a Mac-backed server, Mac identity.
@@ -56,7 +58,9 @@ enum MochiAnisette
         let attempts: [String]
 
         var errorDescription: String? {
-            NSLocalizedString("Apple didn't accept any of MochiLoad's sign-in helpers right now. Apple has been changing this for every sideloading app this month. Check your internet and try again in a few minutes.", comment: "")
+            let message = NSLocalizedString("Apple didn't accept any of MochiLoad's sign-in helpers right now. Apple has been changing this for every sideloading app this month. Check your internet and try again in a few minutes.", comment: "")
+            guard let last = self.attempts.last else { return message }
+            return message + "\n\n(" + last + ")"
         }
 
         var failureReason: String? { self.attempts.last }
@@ -94,31 +98,53 @@ enum MochiAnisette
 
     // MARK: - Fetch
 
-    static func fetch(handler: AnisetteServerHandler?) async throws -> ALTAnisetteData
+    /// All methods, the one that last worked first.
+    static func orderedMethods() -> [Method]
     {
-        var order: [Method] = [.macServerHeaders, .macServerProvisioning, .serverListWindows, .serverListMac, .onDevice]
+        var order: [Method] = [.sideStoreNewProvisioning, .macServerHeaders, .macServerProvisioning, .serverListWindows, .serverListMac, .onDevice]
         if let raw = UserDefaults.standard.string(forKey: lastMethodKey), let last = Method(rawValue: raw)
         {
             order.removeAll { $0 == last }
             order.insert(last, at: 0)
         }
+        return order
+    }
 
+    /// Call after Apple accepted a sign-in made with this method.
+    static func recordSuccess(_ method: Method)
+    {
+        UserDefaults.standard.set(method.rawValue, forKey: lastMethodKey)
+    }
+
+    /// Call when Apple rejected a sign-in made with this method.
+    static func recordFailure(_ method: Method) async
+    {
+        if UserDefaults.standard.string(forKey: lastMethodKey) == method.rawValue
+        {
+            UserDefaults.standard.removeObject(forKey: lastMethodKey)
+        }
+        // Start the next provisioning from scratch, like "Reset adi.pb" in SideStore.
+        AnisetteConfigManager.shared.anisetteAdiBlob = nil
+        UserDefaults.standard.removeObject(forKey: adiBlobServerKey)
+        if method == .onDevice
+        {
+            await OnDeviceAnisetteManager.shared.resetProvisioningState()
+        }
+    }
+
+    /// For everything except sign-in (refreshing, App IDs...): first method that returns data.
+    static func fetch(handler: AnisetteServerHandler?) async throws -> ALTAnisetteData
+    {
         var attempts: [String] = []
 
-        for method in order
+        for method in self.orderedMethods()
         {
             do
             {
-                debugLog("[MochiAnisette] Trying \(method.rawValue)...")
-                var data = try await self.fetch(using: method)
-                data.clientInfo = self.sanitizedClientInfo(data.clientInfo)
-                UserDefaults.standard.set(method.rawValue, forKey: lastMethodKey)
-                debugLog("[MochiAnisette] \(method.rawValue) worked.")
-                return data
+                return try await self.fetch(using: method)
             }
             catch
             {
-                debugLog("[MochiAnisette] \(method.rawValue) failed: \(error.localizedDescription)")
                 attempts.append("\(method.rawValue): \(error.localizedDescription)")
                 if method == .onDevice
                 {
@@ -130,10 +156,31 @@ enum MochiAnisette
         throw AllMethodsFailed(attempts: attempts)
     }
 
-    private static func fetch(using method: Method) async throws -> ALTAnisetteData
+    static func fetch(using method: Method) async throws -> ALTAnisetteData
+    {
+        debugLog("[MochiAnisette] Trying \(method.rawValue)...")
+        do
+        {
+            var data = try await self.rawFetch(using: method)
+            data.clientInfo = self.sanitizedClientInfo(data.clientInfo)
+            debugLog("[MochiAnisette] \(method.rawValue) returned sign-in data.")
+            return data
+        }
+        catch
+        {
+            debugLog("[MochiAnisette] \(method.rawValue) failed: \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    private static func rawFetch(using method: Method) async throws -> ALTAnisetteData
     {
         switch method
         {
+        case .sideStoreNewProvisioning:
+            return try await self.fetchProvisioned(servers: [URL(string: "https://new.ani.sidestore.io")!],
+                                                   clientInfo: self.macClientInfo, userAgent: self.macUserAgent)
+
         case .macServerHeaders:
             return try await self.firstSuccess(in: self.orderedServers(self.macBackedServers)) { server in
                 try await self.fetchReadyMadeHeaders(from: server)

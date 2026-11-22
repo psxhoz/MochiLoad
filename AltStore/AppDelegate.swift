@@ -104,6 +104,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // register crash handler
         setupCrashHandler()
+        MochiCrashReporter.install() // MochiLoad: show the crash reason on next launch
         
         UNUserNotificationCenter.current().delegate = self
         

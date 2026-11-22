@@ -64,13 +64,13 @@ final class TabBarController: UITabBarController
         self.overrideUserInterfaceStyle = .dark
         self.view.window?.overrideUserInterfaceStyle = .dark
         self.mochiInstallBackground()
-    }
-    
-    // MochiLoad: keep the aurora visible when switching tabs
-    override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem)
-    {
-        super.tabBar(tabBar, didSelect: item)
-        DispatchQueue.main.async { self.mochiMakeSelectedTabTransparent() }
+        
+        // MochiLoad: keep the aurora visible when switching tabs. (Overriding tabBar(_:didSelect:) and
+        // calling super crashed on recent iOS, where UITabBarController no longer implements it.)
+        if self.delegate == nil
+        {
+            self.delegate = self
+        }
     }
     
     override func viewDidAppear(_ animated: Bool)
@@ -80,6 +80,7 @@ final class TabBarController: UITabBarController
         
         _viewDidAppear = true
         self.mochiMakeSelectedTabTransparent()
+        MochiCrashReporter.presentPendingReportIfNeeded(from: self)
         
         if let (identifier, sender) = self.initialSegue
         {
@@ -190,5 +191,13 @@ private extension TabBarController
     @objc func openErrorLog(_ notification: Notification)
     {
         self.selectedIndex = Tab.settings.rawValue
+    }
+}
+
+extension TabBarController: UITabBarControllerDelegate
+{
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController)
+    {
+        self.mochiMakeSelectedTabTransparent()
     }
 }

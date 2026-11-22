@@ -145,23 +145,60 @@ final class SignInOperation: BaseStandaloneOperation<StandaloneOperationContext,
     private func signIn(appleID: String, password: String) async throws -> (ALTAccount, ALTAppleAPISession) {
         self.appleIDEmailAddress = appleID
         
-        let anisetteData = try await self.getAnisetteData()
         let handler = self.signInHandler
-        
         let xcodeVersion = await AnisetteConfigManager.shared.resolvedXcodeVersion()
 
-        let (account, session) = try await AuthManager.shared.signIn(
-            appleID: appleID,
-            password: password,
-            anisetteData: anisetteData,
-            xcodeVersion: xcodeVersion,
-            accountRepairHandler: { url, message in
-                await handler.accountRepair(url: url, message: message)
-            },
-            verificationHandler: { request in
-                try await handler.verificationCode(for: request)
+        // MochiLoad: Apple keeps changing which sign-in helpers ("anisette") it accepts. Try each method
+        // until Apple accepts one. Stop right away for a wrong password, a wrong code or a cancel.
+        var attempts: [String] = []
+        var signedIn: (ALTAccount, ALTAppleAPISession)?
+
+        for method in MochiAnisette.orderedMethods() {
+            if self.isCancelled { throw OperationError.cancelled }
+
+            let anisetteData: ALTAnisetteData
+            do {
+                anisetteData = try await MochiAnisette.fetch(using: method)
+            } catch {
+                attempts.append("\(method.rawValue): \(error.localizedDescription)")
+                await MochiAnisette.recordFailure(method)
+                continue
             }
-        )
+
+            let progress = SignInAttemptProgress()
+            do {
+                let result = try await AuthManager.shared.signIn(
+                    appleID: appleID,
+                    password: password,
+                    anisetteData: anisetteData,
+                    xcodeVersion: xcodeVersion,
+                    accountRepairHandler: { url, message in
+                        progress.reachedAccount = true
+                        return await handler.accountRepair(url: url, message: message)
+                    },
+                    verificationHandler: { request in
+                        progress.reachedAccount = true
+                        return try await handler.verificationCode(for: request)
+                    }
+                )
+                MochiAnisette.recordSuccess(method)
+                signedIn = result
+                break
+            } catch {
+                self.debugLog("[SignInOperation] Sign-in with \(method.rawValue) failed: \(error)")
+                if progress.reachedAccount || Self.isAccountOrUserError(error) {
+                    // Apple accepted the helper; the problem is the account, password, code or a cancel.
+                    MochiAnisette.recordSuccess(method)
+                    throw error
+                }
+                attempts.append("\(method.rawValue): \(error.localizedDescription)")
+                await MochiAnisette.recordFailure(method)
+            }
+        }
+
+        guard let (account, session) = signedIn else {
+            throw MochiAnisette.AllMethodsFailed(attempts: attempts)
+        }
         
         AuthManager.shared.adsid = session.dsid
         AuthManager.shared.xcodeToken = session.authToken
@@ -171,6 +208,22 @@ final class SignInOperation: BaseStandaloneOperation<StandaloneOperationContext,
         return (account, session)
     }
 
+
+    /// Errors that mean Apple accepted the sign-in helper, so another helper won't help.
+    private static func isAccountOrUserError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let portalError = error as? DeveloperPortalError {
+            switch portalError {
+            case .incorrectCredentials, .incorrectVerificationCode, .requiresTwoFactorAuthentication:
+                return true
+            default:
+                break
+            }
+        }
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError { return true }
+        return false
+    }
 
     private func provision(team: ALTTeam,
                            session: ALTAppleAPISession,
@@ -345,4 +398,9 @@ private extension SignInOperation {
         self.debugLog("[SignInOperation] fetchTeam completed successfully ('\(selectedTeam.name)').")
         return selectedTeam
     }
+}
+
+/// MochiLoad: remembers whether Apple got as far as asking about the account during one sign-in attempt.
+private final class SignInAttemptProgress: @unchecked Sendable {
+    var reachedAccount = false
 }
