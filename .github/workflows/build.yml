@@ -60,7 +60,13 @@ jobs:
         run: |
           mkdir -p build/logs
           set -o pipefail
-          make -B build 2>&1 | tee build/logs/build.log | tail -n 200
+          make -B build > build/logs/build.log 2>&1 || {
+            echo "=== COMPILE ERRORS ==="
+            grep -E "error:" build/logs/build.log | grep -v "Swift 6" | sort -u | head -60
+            tail -n 40 build/logs/build.log
+            exit 1
+          }
+          tail -n 50 build/logs/build.log
           # The backup helper (SideBackup.ipa) is built into build/ but nothing
           # copies it into the app bundle; the app looks for it there at runtime.
           cp build/SideBackup.ipa SideStore.xcarchive/Products/Applications/SideStore.app/SideBackup.ipa
