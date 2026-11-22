@@ -1,0 +1,93 @@
+name: Build MochiChanger
+
+# Builds an unsigned MochiChanger.ipa on every push to main (or by hand from
+# the Actions tab) and puts it on the "latest-build" release.
+# MochiChanger re-signs itself with the user's Apple ID when installed,
+# so the IPA is only fake-signed here.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'source.json'
+      - 'assets/**'
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: xcode-27
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install tools
+        run: brew install ldid
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: latest-stable
+
+      - name: Version
+        run: |
+          VERSION=$(python3 scripts/ci/workflow.py get-marketing-version)
+          SHORT=$(git rev-parse --short HEAD)
+          echo "VERSION=${VERSION}-${{ github.run_number }}+${SHORT}" | tee -a "$GITHUB_ENV"
+
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ~/Library/Caches/org.swift.swiftpm
+          key: xcode-${{ runner.os }}-${{ github.sha }}
+          restore-keys: xcode-${{ runner.os }}-
+
+      - name: Build
+        run: |
+          mkdir -p build/logs
+          set -o pipefail
+          make build 2>&1 | tee build/logs/build.log | tail -n 200
+          make fakesign
+          make ipa
+          mv SideStore.ipa MochiChanger.ipa
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build/logs
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MochiChanger-${{ env.VERSION }}
+          path: MochiChanger.ipa
+
+      - name: Publish to the latest-build release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Built from ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC'). Version ${VERSION}."
+          if gh release view latest-build >/dev/null 2>&1; then
+            gh release edit latest-build --title "MochiChanger (latest build)" --notes "$NOTES" --prerelease
+            git tag -f latest-build && git push -f origin latest-build
+          else
+            gh release create latest-build --title "MochiChanger (latest build)" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
+          fi
+          gh release upload latest-build MochiChanger.ipa --clobber

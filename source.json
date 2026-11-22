@@ -1,0 +1,11 @@
+{
+  "name": "MochiChanger Picks",
+  "subtitle": "Apps picked for you",
+  "description": "The default source for MochiChanger. Apps added here show up in Browse for everyone using MochiChanger.",
+  "iconURL": "https://raw.githubusercontent.com/psxhoz/MochiChanger/main/assets/icon.png",
+  "website": "https://github.com/psxhoz/MochiChanger",
+  "tintColor": "A78BFA",
+  "featuredApps": [],
+  "apps": [],
+  "news": []
+}

@@ -1,47 +1,39 @@
-# SideStore
+# MochiChanger
 
-> SideStore is an *untethered, community driven* alternative app store for non-jailbroken iOS devices 
+MochiChanger installs and refreshes sideloaded apps on iPhone with a free Apple ID, without a computer after setup. It's built to be easy for people who have never sideloaded before.
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
-[![Nightly SideStore build](https://github.com/SideStore/SideStore/actions/workflows/nightly.yml/badge.svg)](https://github.com/SideStore/SideStore/actions/workflows/nightly.yml)
-[![.github/workflows/beta.yml](https://github.com/SideStore/SideStore/actions/workflows/beta.yml/badge.svg)](https://github.com/SideStore/SideStore/actions/workflows/beta.yml)
-[![Discord](https://img.shields.io/discord/949183273383395328?label=Discord)](https://dis.sidestore.io)
+## Download
 
-![Alt](https://repobeats.axiom.co/api/embed/3a329ce95955690b9a9366f8d5598626a847d96c.svg "Repobeats analytics image")
+The newest build is on the [latest-build release](https://github.com/psxhoz/MochiChanger/releases/tag/latest-build) as `MochiChanger.ipa`. GitHub Actions builds it automatically every time `main` changes.
 
-SideStore is an iOS application that allows you to sideload apps onto your iOS device with just your Apple ID. SideStore resigns apps with your personal development certificate, and then uses a [specially designed VPN](https://github.com/jkcoxson/em_proxy) in order to trick iOS into installing them. SideStore will periodically "refresh" your apps in the background, to keep their normal 7-day development period from expiring.
+## First-time setup (once per phone)
 
-SideStore's goal is to provide an untethered sideloading experience. It's a community driven fork of [AltStore](https://github.com/rileytestut/AltStore), and has already implemented some of the community's most-requested features.
+1. On a computer, sideload `MochiChanger.ipa` once (for example with [iloader](https://github.com/nab138/iloader) or Sideloadly) and make a pairing file for the iPhone.
+2. On the iPhone, install **LocalDevVPN** from the App Store and turn it on.
+3. Open MochiChanger, import the pairing file when it asks, sign in with your Apple ID, and turn on auto-refresh.
 
-(Contributions are welcome! 🙂)
+## Apps in Browse
 
-## Requirements
-- Xcode 15
-- iOS 14+
-- Rustup (`brew install rustup`)
+Browse shows the apps listed in [`source.json`](source.json). Add an app there and it shows up for everyone using MochiChanger.
 
-Why iOS 14? Targeting such a recent version of iOS allows us to accelerate development, especially since not many developers have older devices to test on. This is corrobated by the fact that SwiftUI support is much better, allowing us to transistion to a more modern UI codebase.
-## Project Overview
+## Building it yourself
 
-### SideStore
-SideStore is a just regular, sandboxed iOS application. The AltStore app target contains the vast majority of SideStore's functionality, including all the logic for downloading and updating apps through SideStore. SideStore makes heavy use of standard iOS frameworks and technologies most iOS developers are familiar with.
+You need macOS with Xcode. Clone with submodules, then run:
 
-### EM Proxy
-[EM Proxy](https://github.com/jkcoxson/em_proxy) powers the defining feature of SideStore: untethered app installation. By leveraging a custom-built App Store app with additional entitlements ([LocalDevVPN](https://github.com/jkcoxson/LocalDevVPN)) to create the VPN tunnel for us, it allows SideStore to take advantage of [Jitterbug](https://github.com/osy/Jitterbug)'s loopback method without requiring a paid developer account.
+```sh
+git clone --recurse-submodules https://github.com/psxhoz/MochiChanger.git
+cd MochiChanger
+make build fakesign ipa
+```
 
-### Minimuxer
-[Minimuxer](https://github.com/jkcoxson/minimuxer) is a lockdown muxer that can run inside iOS’s sandbox. It replicates Apple’s usbmuxd protocol on macOS to “discover” devices to interface with LocalDevVPN on-device.
+The result is `SideStore.ipa`, which the build workflow renames to `MochiChanger.ipa`.
 
-### Roxas
-[Roxas](https://github.com/rileytestut/roxas) is Riley Testut's internal framework from AltStore used across many of their iOS projects, developed to simplify a variety of common tasks used in iOS development.
+## Credits
 
-We're hoping to eventually eliminate our dependency on it, as it increases the amount of unnecessary Objective-C in the project.
+MochiChanger is a modified version of [SideStore](https://github.com/SideStore/SideStore), which is itself a fork of [AltStore](https://github.com/altstoreio/AltStore) by Riley Testut. Thank you to the SideStore and AltStore teams and everyone who works on them, including the authors of [em_proxy](https://github.com/jkcoxson/em_proxy), [minimuxer](https://github.com/SideStore/minimuxer), [LocalDevVPN](https://github.com/jkcoxson/LocalDevVPN) and [Jitterbug](https://github.com/osy/Jitterbug).
 
-## Contributing/Compilation Instructions
+This repository started from SideStore at upstream commit `4f3d18d`. MochiChanger is an independent project and is not affiliated with or supported by the SideStore or AltStore teams, so please don't send MochiChanger questions to them.
 
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md)
+## License
 
-## Licensing
-
-This project is licensed under the **AGPLv3 license**.
+MochiChanger is licensed under the **AGPLv3**, the same as SideStore. See [LICENSE](LICENSE). If you share MochiChanger with anyone, this source code has to stay available to them.
