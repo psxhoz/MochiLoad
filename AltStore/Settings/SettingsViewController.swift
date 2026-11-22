@@ -507,7 +507,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Sign in with your Apple ID to download apps from MochiChanger.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Sign in with your Apple ID to download apps from MochiLoad.", comment: "")
             }
             
         case .patreon:
@@ -534,7 +534,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Enable Background Refresh to automatically refresh apps in the background when connected to Wi-Fi. \n\nEnable Disable Idle Timeout to allow MochiChanger to keep your device awake during a refresh or install of any apps.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Enable Background Refresh to automatically refresh apps in the background when connected to Wi-Fi. \n\nEnable Disable Idle Timeout to allow MochiLoad to keep your device awake during a refresh or install of any apps.", comment: "")
             }
             
         case .display:
@@ -544,7 +544,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Personalize your MochiChanger experience by choosing an alternate app icon.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Personalize your MochiLoad experience by choosing an alternate app icon.", comment: "")
             }
             
             
@@ -620,7 +620,11 @@ private extension SettingsViewController
         // case .macDirtyCow:
         //     let isHidden = !(UserDefaults.standard.isCowExploitSupported && UserDefaults.standard.isDebugModeEnabled)
         //     return isHidden
-            
+
+        // MochiLoad: SideStore's socials/Patreon section and its beta channel don't apply here.
+        // SideStore is still credited in the Credits section.
+        case .patreon, .betaTesting: return true
+
         default: return false
         }
     }
@@ -793,7 +797,7 @@ private extension SettingsViewController
     func clearCache()
     {
         let makeCacheTitle: (String) -> String = { sizeString in
-            String(format: NSLocalizedString("Are you sure you want to clear MochiChanger's cache?\n\nCache Size: %@", comment: ""), sizeString)
+            String(format: NSLocalizedString("Are you sure you want to clear MochiLoad's cache?\n\nCache Size: %@", comment: ""), sizeString)
         }
         let alertController = UIAlertController(title: makeCacheTitle(NSLocalizedString("Calculating…", comment: "")),
                                                 message: NSLocalizedString("This will remove all temporary files as well as backups for uninstalled apps.", comment: ""),
@@ -1228,34 +1232,8 @@ extension SettingsViewController
                     self.openWebURL(AppConstants.URLs.sideStoreIssues, preferredTintColor: .altPrimary)
                 })
                 
-                // Option 2: Discord
-                alertController.addAction(UIAlertAction(title: "Discord", style: .default) { _ in
-                    self.openWebURL(AppConstants.URLs.sideStoreDiscord, preferredTintColor: .altPrimary)
-                })
-                
-                #if !os(tvOS)
-                // Option 3: Mail
-                alertController.addAction(UIAlertAction(title: "Send Email", style: .default) { _ in
-                    if MFMailComposeViewController.canSendMail() {
-                        let mailViewController = MFMailComposeViewController()
-                        mailViewController.mailComposeDelegate = self
-                        mailViewController.setToRecipients(["support@sidestore.io"])
+                // MochiLoad: feedback goes to the MochiLoad repo only (no SideStore Discord/email).
 
-                        // TODO: MARKETING_VERSION is going to be set anyways so this needs to be fixed for beta
-                        if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                            mailViewController.setSubject("SideStore Beta \(version) Feedback")
-                        } else {
-                            mailViewController.setSubject("SideStore Beta Feedback")
-                        }
-
-                       self.present(mailViewController, animated: true, completion: nil)
-                    } else {
-                      let toastView = ToastView(text: NSLocalizedString("Cannot Send Mail", comment: ""), detailText: nil)
-                      toastView.show(in: self)
-                    }
-                })
-                #endif
-                
                 // Cancel action
                 alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
                 
@@ -1297,7 +1275,7 @@ extension SettingsViewController
                     selected: UserDefaults.standard.menuAnisetteURL,
                     onResetAdiPb: { [weak self] in
                         guard let self = self else { return }
-                        ToastView(text: "Cleared adi.pb!", detailText: "You will need to log back into Apple ID in MochiChanger.")
+                        ToastView(text: "Cleared adi.pb!", detailText: "You will need to log back into Apple ID in MochiLoad.")
                             .show(in: self)
                     }
                 )

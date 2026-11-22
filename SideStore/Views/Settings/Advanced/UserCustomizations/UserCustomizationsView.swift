@@ -36,6 +36,8 @@ struct UserCustomizationsView: View {
     @State private var preferResignedIPA: Bool = UserDefaults.standard.preferResignedIPA
     @State private var pendingPreferIPAOngoing: Bool = false
     @State private var showPreferIPAToggleAlert: Bool = false
+    // MochiLoad: "expires soon" reminders (see ExpiryReminderScheduler)
+    @State private var expiryRemindersEnabled: Bool = ExpiryReminderScheduler.isEnabled
     @State private var isExportResignedAppEnabled: Bool = UserDefaults.standard.isExportResignedAppEnabled
     @State private var enableEMPforWireguard: Bool = UserDefaults.standard.enableEMPforWireguard
     @State private var pendingEMPOption: Bool = false
@@ -466,7 +468,7 @@ struct UserCustomizationsView: View {
             }
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Changing the EMProxy setting requires restarting MochiChanger. If canceled, changes will not be saved.")
+            Text("Changing the EMProxy setting requires restarting MochiLoad. If canceled, changes will not be saved.")
         }
         .alert("Restart Required", isPresented: $showBackendRestartConfirmation) {
             SwiftUI.Button("Restart Now", role: .destructive) {
@@ -478,7 +480,7 @@ struct UserCustomizationsView: View {
                 pendingBackendOption = nil
             }
         } message: {
-            Text("Changing the Minimuxer backend requires restarting MochiChanger. If canceled, changes will not be saved.")
+            Text("Changing the Minimuxer backend requires restarting MochiLoad. If canceled, changes will not be saved.")
         }
         .alert(pendingPreferIPAOngoing ? "Prefer Resigned IPA" : "Prefer App Bundle", isPresented: $showPreferIPAToggleAlert) {
             SwiftUI.Button("Switch") {
@@ -786,6 +788,19 @@ struct UserCustomizationsView: View {
                 .padding(.horizontal, 16)
             
             VStack(spacing: 0) {
+                toggleRow(title: "Expiring Soon Reminders",
+                          subtitle: "Get a notification a day and a few hours before an app would stop opening.",
+                          isOn: Binding(
+                    get: { expiryRemindersEnabled },
+                    set: { newValue in
+                        expiryRemindersEnabled = newValue
+                        ExpiryReminderScheduler.isEnabled = newValue
+                        Task { await ExpiryReminderScheduler.reschedule() }
+                    }
+                ))
+
+                divider
+
                 toggleRow(title: "Customize Info.plist", isOn: Binding(
                     get: { customizeInfoPlist },
                     set: { newValue in
@@ -1035,7 +1050,7 @@ struct UserCustomizationsView: View {
         guard let top = UIApplication.shared.topViewController() else { return }
         let alertController = UIAlertController(
             title: NSLocalizedString("Reset adi.pb", comment: ""),
-            message: NSLocalizedString("This will sign you out of Apple ID in MochiChanger and clear the provisioned adi.pb data from your Keychain. Your active signing certificate will be preserved.", comment: ""),
+            message: NSLocalizedString("This will sign you out of Apple ID in MochiLoad and clear the provisioned adi.pb data from your Keychain. Your active signing certificate will be preserved.", comment: ""),
             preferredStyle: .alert
         )
         let contentVC = ResetAdiAlertViewController()

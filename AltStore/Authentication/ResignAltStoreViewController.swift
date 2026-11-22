@@ -36,11 +36,11 @@ final class ResignAltStoreViewController: UIViewController
         
         switch reason {
             case .expired:
-                reasonText = NSLocalizedString("The signing certificate used to install MochiChanger has expired.", comment: "")
+                reasonText = NSLocalizedString("The signing certificate used to install MochiLoad has expired.", comment: "")
             case .revoked:
-                reasonText = NSLocalizedString("The signing certificate used to install MochiChanger was revoked on the Apple Developer portal.", comment: "")
+                reasonText = NSLocalizedString("The signing certificate used to install MochiLoad was revoked on the Apple Developer portal.", comment: "")
             case .freeAccountLimitRevoked:
-                reasonText = NSLocalizedString("Free developer accounts are limited to 1 active signing certificate. Since the private key for the active certificate was not found on this device, MochiChanger will create a new certificate. This will automatically revoke the active certificate, which may disable installations on other devices or made by Xcode.", comment: "")
+                reasonText = NSLocalizedString("Free developer accounts are limited to 1 active signing certificate. Since the private key for the active certificate was not found on this device, MochiLoad will create a new certificate. This will automatically revoke the active certificate, which may disable installations on other devices or made by Xcode.", comment: "")
             case .differentAccount:
                 reasonText = NSLocalizedString("The logged-in Apple ID account has changed.", comment: "")
             case .differentTeam:
@@ -48,11 +48,11 @@ final class ResignAltStoreViewController: UIViewController
             case .privateKeyLost:
                 reasonText = NSLocalizedString("The private key for the active signing certificate is missing from this device's keychain.", comment: "")
             case .externalSigner:
-                reasonText = NSLocalizedString("MochiChanger was installed by a different signing tool (like Xcode or AltStore).", comment: "")
+                reasonText = NSLocalizedString("MochiLoad was installed by a different signing tool (like Xcode or AltStore).", comment: "")
             case .missingProfile:
-                reasonText = NSLocalizedString("The provisioning profile for MochiChanger is missing or invalid.", comment: "")
+                reasonText = NSLocalizedString("The provisioning profile for MochiLoad is missing or invalid.", comment: "")
             case .missingCertificate:
-                reasonText = NSLocalizedString("The signing certificate could not be extracted from MochiChanger's binary.", comment: "")
+                reasonText = NSLocalizedString("The signing certificate could not be extracted from MochiLoad's binary.", comment: "")
         }
         
         let isRevocationExpected = (reason == .privateKeyLost || reason == .freeAccountLimitRevoked)
@@ -63,8 +63,8 @@ final class ResignAltStoreViewController: UIViewController
         self.reinstallButton.fontSize = 15
         
         let header = NSLocalizedString("Signing certificate mismatch detected.", comment: "")
-        let paragraph1 = NSLocalizedString("To ensure you can continue using MochiChanger, \nthe app must be reinstalled now using the new certificate. Otherwise, you will be unable to refresh or open MochiChanger once the old certificate expires.", comment: "")
-        let paragraph2 = NSLocalizedString("This reinstallation registers the new signature with the OS and will terminate MochiChanger. You can reopen MochiChanger immediately once reinstallation is completed.", comment: "")
+        let paragraph1 = NSLocalizedString("To ensure you can continue using MochiLoad, \nthe app must be reinstalled now using the new certificate. Otherwise, you will be unable to refresh or open MochiLoad once the old certificate expires.", comment: "")
+        let paragraph2 = NSLocalizedString("This reinstallation registers the new signature with the OS and will terminate MochiLoad. You can reopen MochiLoad immediately once reinstallation is completed.", comment: "")
         
         let fullText = "\(header)\n\n\(paragraph1)\n\n\(paragraph2)"
         let attributedString = NSMutableAttributedString(string: fullText)
@@ -152,7 +152,7 @@ private extension ResignAltStoreViewController
                             return
                         }
                         
-                        let alertController = UIAlertController(title: NSLocalizedString("Failed to Resign MochiChanger", comment: ""), message: error.localizedFailureReason ?? error.localizedDescription, preferredStyle: .alert)
+                        let alertController = UIAlertController(title: NSLocalizedString("Failed to Resign MochiLoad", comment: ""), message: error.localizedFailureReason ?? error.localizedDescription, preferredStyle: .alert)
                         alertController.addAction(UIAlertAction(title: NSLocalizedString("Try Again", comment: ""), style: .default, handler: { (action) in
                             refresh()
                         }))

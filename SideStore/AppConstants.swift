@@ -38,8 +38,8 @@ public enum AppConstants {
     public enum Sources {
         public static let fetchTimeout: TimeInterval  = 3.0
         public static let defaultSourcesURL           = URL(string: "https://sidestore.io/default-sources")!
-        public static let sideStoreCommunitySourceURL = URL(string: "https://raw.githubusercontent.com/psxhoz/MochiChanger/main/source.json")!
-        public static let sideStoreFallbackIconURL    = URL(string: "https://raw.githubusercontent.com/psxhoz/MochiChanger/main/assets/icon.png")!
+        public static let sideStoreCommunitySourceURL = URL(string: "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/source.json")!
+        public static let sideStoreFallbackIconURL    = URL(string: "https://raw.githubusercontent.com/psxhoz/MochiLoad/main/assets/icon.png")!
         public static let sideStoreWebsite            = URL(string: "https://sidestore.io")!
     }
     
@@ -140,7 +140,7 @@ public enum AppConstants {
         public static let errorCodesDocumentation   = URL(string: "https://docs.sidestore.io/docs/troubleshooting/error-codes")!
         public static let sideStoreWebsite          = URL(string: "https://sidestore.io")!
         public static let sideStoreGitHub           = URL(string: "https://github.com/SideStore")!
-        public static let sideStoreIssues           = URL(string: "https://github.com/SideStore/SideStore/issues")!
+        public static let sideStoreIssues           = URL(string: "https://github.com/psxhoz/MochiLoad/issues")! // MochiLoad: reports go to this repo
         public static let sideStoreDiscord          = URL(string: "https://discord.gg/sidestore-949183273383395328")!
     }
 

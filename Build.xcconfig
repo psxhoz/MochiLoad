@@ -16,7 +16,7 @@ CODE_SIGN_ENTITLEMENTS = ./AltStore/AltStoreFree.entitlements
 
 PRODUCT_NAME = SideStore
 
-BASE_BUNDLE_ID                                  = $(ORG_IDENTIFIER).MochiChanger
+BASE_BUNDLE_ID                                  = $(ORG_IDENTIFIER).MochiLoad
 MAIN_BUNDLE_IDENTIFIER[config=Debug]            = $(BASE_BUNDLE_ID).$(DEVELOPMENT_TEAM)
 MAIN_BUNDLE_IDENTIFIER[config=Release]          = $(BASE_BUNDLE_ID)
 APP_GROUP_IDENTIFIER                            = $(MAIN_BUNDLE_IDENTIFIER)

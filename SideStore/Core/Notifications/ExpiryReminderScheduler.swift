@@ -1,10 +1,10 @@
 //
 //  ExpiryReminderScheduler.swift
-//  MochiChanger
+//  MochiLoad
 //
 //  Schedules local "your app expires soon" reminders for every active app,
 //  so people get a heads-up before an app stops opening even if background
-//  refresh never ran. Rescheduled when MochiChanger comes to the foreground,
+//  refresh never ran. Rescheduled when MochiLoad comes to the foreground,
 //  goes to the background, or finishes a background refresh.
 //  Needs proper testing on device.
 //
@@ -48,7 +48,7 @@ enum ExpiryReminderScheduler
             InstalledApp.fetchActiveApps(in: context).map { app in
                 let isSelf = (app.bundleIdentifier == StoreApp.altstoreAppID)
                 return Entry(bundleID: app.bundleIdentifier,
-                             name: isSelf ? "MochiChanger" : app.name,
+                             name: isSelf ? "MochiLoad" : app.name,
                              expirationDate: app.expirationDate,
                              isSelf: isSelf)
             }
@@ -108,9 +108,9 @@ enum ExpiryReminderScheduler
     {
         if entry.isSelf
         {
-            return NSLocalizedString("Open MochiChanger and tap Refresh All so it and your apps keep opening. Turn on LocalDevVPN first.", comment: "")
+            return NSLocalizedString("Open MochiLoad and tap Refresh All so it and your apps keep opening. Turn on LocalDevVPN first.", comment: "")
         }
 
-        return NSLocalizedString("Open MochiChanger and tap Refresh so it keeps opening. Turn on LocalDevVPN first.", comment: "")
+        return NSLocalizedString("Open MochiLoad and tap Refresh so it keeps opening. Turn on LocalDevVPN first.", comment: "")
     }
 }

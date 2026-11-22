@@ -15,8 +15,8 @@ private nonisolated(unsafe) var appGroupsCache: [URL: (modDate: Date?, groups: [
 // @livecontainer
 private extension Bundle {
     @objc dynamic static let activeBundle: Bundle = Bundle.main
-    @objc dynamic static let storeAppBundleIdentifier = "com.psxhoz.MochiChanger"
-    @objc dynamic static let appbundleIdentifier = "com.psxhoz.MochiChanger"
+    @objc dynamic static let storeAppBundleIdentifier = "com.psxhoz.MochiLoad"
+    @objc dynamic static let appbundleIdentifier = "com.psxhoz.MochiLoad"
 }
 
 public extension Bundle
@@ -29,7 +29,7 @@ public extension Bundle
             let info = activeBundle.infoDictionary
             let version = (info?["CFBundleShortVersionString"] as? String) ?? "?.?.?"
             let build = (info?["CFBundleVersion"] as? String).map { " (\($0))" } ?? "(????)"
-            return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "MochiChanger Version")
+            return NSLocalizedString(String(format: "Version %@%@", version, build), comment: "MochiLoad Version")
         }()
         public static let activeBundleIdentifier: String = activeBundle.bundleIdentifier!
         public static let storeAppBundleIdentifier = Bundle.storeAppBundleIdentifier

@@ -395,7 +395,7 @@ extension MergePolicy{
                 }
                 catch
                 {
-                    let nsError = error.serialized(withFailure: NSLocalizedString("MochiChanger's database could not be saved.", comment: ""))
+                    let nsError = error.serialized(withFailure: NSLocalizedString("MochiLoad's database could not be saved.", comment: ""))
                     throw nsError
                 }
                 

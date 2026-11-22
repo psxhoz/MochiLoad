@@ -166,7 +166,7 @@ struct BonjourDiscoveryView: View {
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 
-                Text("**Settings -> apps -> MochiChanger -> LocalNetworkAccess = toggle on**")
+                Text("**Settings -> apps -> MochiLoad -> LocalNetworkAccess = toggle on**")
                     .font(.caption.bold())
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -374,7 +374,7 @@ struct ServiceTypesView: View {
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 
-                Text("**Settings -> apps -> MochiChanger -> LocalNetworkAccess = toggle on**")
+                Text("**Settings -> apps -> MochiLoad -> LocalNetworkAccess = toggle on**")
                     .font(.caption.bold())
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -620,7 +620,7 @@ struct ServiceInstancesView: View {
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                 
-                Text("**Settings -> apps -> MochiChanger -> LocalNetworkAccess = toggle on**")
+                Text("**Settings -> apps -> MochiLoad -> LocalNetworkAccess = toggle on**")
                     .font(.caption.bold())
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

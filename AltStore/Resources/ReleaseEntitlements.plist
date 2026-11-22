@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>XYZ0123456.com.psxhoz.MochiChanger</string>
+	<string>XYZ0123456.com.psxhoz.MochiLoad</string>
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.developer.siri</key>
@@ -12,7 +12,7 @@
 	<string>XYZ0123456</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.psxhoz.MochiChanger</string>
+		<string>group.com.psxhoz.MochiLoad</string>
 	</array>
 	<key>get-task-allow</key>
 	<true/>

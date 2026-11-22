@@ -133,7 +133,7 @@ private struct AppDetailWidgetView: View
             else
             {
                 VStack(spacing: 4) {
-                    Text("Open MochiChanger")
+                    Text("Open MochiLoad")
                         .font(.system(.subheadline, design: .rounded))
                         .fontWeight(.semibold)
                         .foregroundColor(Color.white.opacity(0.8))

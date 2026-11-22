@@ -693,10 +693,10 @@ public extension StoreApp
         let placeholderChannel = ReleaseTrackType.stable.description
         
         let app = StoreApp(context: context)
-        app.name = "MochiChanger"
+        app.name = "MochiLoad"
         app.bundleIdentifier = placeholderBundleId
         app.developerName = "psxhoz"
-        app.localizedDescription = "MochiChanger installs and refreshes your sideloaded apps."
+        app.localizedDescription = "MochiLoad installs and refreshes your sideloaded apps."
         app.iconURL = sideStoreAppIconURL        
         app.screenshotURLs = []
         app.sourceIdentifier = placeholderSourceID

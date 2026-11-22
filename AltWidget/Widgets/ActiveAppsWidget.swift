@@ -227,7 +227,7 @@ private struct ActiveAppsWidgetView: View
     
     private var placeholder: some View {
         VStack(spacing: 4) {
-            Text("Open MochiChanger")
+            Text("Open MochiLoad")
                 .font(.system(.body, design: .rounded))
                 .fontWeight(.semibold)
                 .foregroundColor(Color.white.opacity(0.8))

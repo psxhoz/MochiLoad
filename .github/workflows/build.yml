@@ -1,8 +1,8 @@
-name: Build MochiChanger
+name: Build MochiLoad
 
-# Builds an unsigned MochiChanger.ipa on every push to main (or by hand from
+# Builds an unsigned MochiLoad.ipa on every push to main (or by hand from
 # the Actions tab) and puts it on the "latest-build" release.
-# MochiChanger re-signs itself with the user's Apple ID when installed,
+# MochiLoad re-signs itself with the user's Apple ID when installed,
 # so the IPA is only fake-signed here.
 
 on:
@@ -66,7 +66,7 @@ jobs:
           cp build/SideBackup.ipa SideStore.xcarchive/Products/Applications/SideStore.app/SideBackup.ipa
           make fakesign
           make ipa
-          mv SideStore.ipa MochiChanger.ipa
+          mv SideStore.ipa MochiLoad.ipa
 
       - name: Upload build logs
         if: failure()
@@ -78,8 +78,8 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: MochiChanger-${{ env.VERSION }}
-          path: MochiChanger.ipa
+          name: MochiLoad-${{ env.VERSION }}
+          path: MochiLoad.ipa
 
       - name: Publish to the latest-build release
         if: github.ref == 'refs/heads/main'
@@ -88,9 +88,9 @@ jobs:
         run: |
           NOTES="Built from ${GITHUB_SHA::7} on $(date -u '+%Y-%m-%d %H:%M UTC'). Version ${VERSION}."
           if gh release view latest-build >/dev/null 2>&1; then
-            gh release edit latest-build --title "MochiChanger (latest build)" --notes "$NOTES" --prerelease
+            gh release edit latest-build --title "MochiLoad (latest build)" --notes "$NOTES" --prerelease
             git tag -f latest-build && git push -f origin latest-build
           else
-            gh release create latest-build --title "MochiChanger (latest build)" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
+            gh release create latest-build --title "MochiLoad (latest build)" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
           fi
-          gh release upload latest-build MochiChanger.ipa --clobber
+          gh release upload latest-build MochiLoad.ipa --clobber

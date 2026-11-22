@@ -61,7 +61,7 @@ struct ThemePickerView: View {
             VStack(spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("MochiChanger")
+                        Text("MochiLoad")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         Text("v0.6.0 • Installed")

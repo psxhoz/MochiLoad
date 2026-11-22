@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>XYZ0123456.com.psxhoz.MochiChanger.AltWidget</string>
+	<string>XYZ0123456.com.psxhoz.MochiLoad.AltWidget</string>
 	<key>com.apple.developer.team-identifier</key>
 	<string>XYZ0123456</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.psxhoz.MochiChanger</string>
+		<string>group.com.psxhoz.MochiLoad</string>
 	</array>
 	<key>get-task-allow</key>
 	<true/>

@@ -57,7 +57,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
                 await WidgetDataManager.publishCurrentInstalledAppsIfNeeded(in: DatabaseManager.shared.viewContext)
             }
             Task {
-                // MochiChanger: keep "expires soon" reminders in sync with current expiry dates.
+                // MochiLoad: keep "expires soon" reminders in sync with current expiry dates.
                 await ExpiryReminderScheduler.reschedule()
             }
         }
@@ -71,7 +71,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         
         guard UIApplication.shared.applicationState == .background else { return }
 
-        // MochiChanger: reschedule "expires soon" reminders before the app is suspended.
+        // MochiLoad: reschedule "expires soon" reminders before the app is suspended.
         Task { await ExpiryReminderScheduler.reschedule() }
 
         // Make sure to update AppDelegate.applicationDidEnterBackground() as well.

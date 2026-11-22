@@ -158,7 +158,7 @@ final class BackgroundRefreshAppsOperation: BaseStandaloneOperation<OperationCon
     }
     
     private func scheduleFinishedRefreshingNotification(for result: Result<[String: Result<InstalledApp, Error>], Error>, delay: TimeInterval = 5) {
-        // MochiChanger: expiry dates changed (or a refresh failed), so refresh the "expires soon" reminders too.
+        // MochiLoad: expiry dates changed (or a refresh failed), so refresh the "expires soon" reminders too.
         Task { await ExpiryReminderScheduler.reschedule() }
 
         func scheduleFinishedRefreshingNotification() {
