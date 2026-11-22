@@ -94,3 +94,5 @@ jobs:
             gh release create latest-build --title "MochiLoad (latest build)" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
           fi
           gh release upload latest-build MochiLoad.ipa --clobber
+          # Remove the IPA from before the rename so nobody downloads the old app
+          gh release delete-asset latest-build MochiChanger.ipa -y || true
