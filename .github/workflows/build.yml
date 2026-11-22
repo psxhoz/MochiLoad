@@ -61,6 +61,9 @@ jobs:
           mkdir -p build/logs
           set -o pipefail
           make -B build 2>&1 | tee build/logs/build.log | tail -n 200
+          # The backup helper (SideBackup.ipa) is built into build/ but nothing
+          # copies it into the app bundle; the app looks for it there at runtime.
+          cp build/SideBackup.ipa SideStore.xcarchive/Products/Applications/SideStore.app/SideBackup.ipa
           make fakesign
           make ipa
           mv SideStore.ipa MochiChanger.ipa
