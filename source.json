@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.21",
-          "buildVersion": "21",
-          "date": "2026-11-23T19:54:08Z",
-          "localizedDescription": "Pairing: detect why no code arrives (Local Network off / not visible)",
+          "version": "1.0.22",
+          "buildVersion": "22",
+          "date": "2026-11-23T20:19:50Z",
+          "localizedDescription": "Fix Settings crash when signed out",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38772235,
+          "size": 38773543,
           "minOSVersion": "15.0"
         }
       ],
