@@ -127,7 +127,12 @@ final class SettingsViewController: UITableViewController
     private var accountStatus: AccountVerificationRow.Status = .completed
     private var accountVerificationTask: Task<Void, Never>?
     
-    private var prototypeHeaderFooterView: SettingsHeaderFooterView!
+    // MochiLoad: created on first use. Table layout can ask for header heights before viewDidLoad
+    // finishes (e.g. when the footer is installed), which crashed Settings when signed out.
+    private lazy var prototypeHeaderFooterView: SettingsHeaderFooterView = {
+        let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: nil)
+        return nib.instantiate(withOwner: nil, options: nil)[0] as! SettingsHeaderFooterView
+    }()
     
     // Add outlet
     @IBOutlet private var betaTrackLabel: UILabel!
@@ -230,6 +235,9 @@ final class SettingsViewController: UITableViewController
     {
         super.viewDidLoad()
         
+        let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: nil)
+        self.tableView.register(nib, forHeaderFooterViewReuseIdentifier: "HeaderFooterView")
+        
         // MochiLoad: replace SideStore's "Follow SideStore for updates" footer and social buttons.
         self.mochiInstallFooter()
         
@@ -243,10 +251,6 @@ final class SettingsViewController: UITableViewController
             navigationController?.navigationBar.scrollEdgeAppearance = appearance       // required for iOS 26, maybe enforce it in storyboard?
         }
         #endif 
-        let nib = UINib(nibName: "SettingsHeaderFooterView", bundle: nil)
-        self.prototypeHeaderFooterView = nib.instantiate(withOwner: nil, options: nil)[0] as? SettingsHeaderFooterView
-        
-        self.tableView.register(nib, forHeaderFooterViewReuseIdentifier: "HeaderFooterView")
         
         let debugModeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(SettingsViewController.handleDebugModeGesture(_:)))
         debugModeGestureRecognizer.delegate = self
