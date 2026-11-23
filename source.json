@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.20",
-          "buildVersion": "20",
-          "date": "2026-11-23T19:08:41Z",
-          "localizedDescription": "Pairing code in the Dynamic Island and on the lock screen",
+          "version": "1.0.21",
+          "buildVersion": "21",
+          "date": "2026-11-23T19:54:08Z",
+          "localizedDescription": "Pairing: detect why no code arrives (Local Network off / not visible)",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38765788,
+          "size": 38772235,
           "minOSVersion": "15.0"
         }
       ],
