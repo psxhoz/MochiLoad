@@ -162,6 +162,7 @@ final class WirelessPairViewModel: ObservableObject {
             // MochiLoad: the person is in the Settings app at this point, so send the code as a notification
             // right away (not after hopping to the main thread, which may be paused in the background).
             Self.postPairingCodeNotification(pin)
+            MochiPairingLiveActivity.showCode(pin)
             Task { @MainActor in
                 guard let self = self else { return }
                 self.pinCode = pin
@@ -535,6 +536,7 @@ final class WirelessPairViewModel: ObservableObject {
                 self.endPairingBackgroundTask()
                 switch result {
                 case .success(let device):
+                    MochiPairingLiveActivity.finish(success: true)
                     debugLog("[WirelessPairViewModel] startPairing() SUCCESS with device: name='\(device.name)', model='\(device.model)'")
                     self.pairedDevice = device
                     self.statusText = "Success!"
@@ -543,6 +545,7 @@ final class WirelessPairViewModel: ObservableObject {
                     self.shareSheetURL = URL(fileURLWithPath: device.pairingFilePath)
                     self.isShareSheetPresented = self.presentsShareSheetOnSuccess
                 case .failure(let error):
+                    MochiPairingLiveActivity.finish(success: false)
                     debugLog("[WirelessPairViewModel] startPairing() FAILURE: error='\(error.localizedDescription)'")
                     self.errorMessage = error.localizedDescription
                     self.statusText = "Pairing Failed"
@@ -556,6 +559,7 @@ final class WirelessPairViewModel: ObservableObject {
         debugLog("[WirelessPairViewModel] stopPairing() stopping advertisement and tearing down session")
         wirelessPairing.stop()
         endPairingBackgroundTask()
+        MochiPairingLiveActivity.finish(success: nil)
         
         isAdvertising = false
         statusText = "Ready to pair"
@@ -657,6 +661,7 @@ final class WirelessPairViewModel: ObservableObject {
             BackgroundAudioService.shared.stop()
         }
         Self.postReadyToPairNotification()
+        MochiPairingLiveActivity.start()
     }
 
     private func endPairingBackgroundTask() {

@@ -22,5 +22,8 @@ struct AltWidgetBundle: WidgetBundle
         
         // MochiLoad: "Refreshing apps" on the lock screen and Dynamic Island.
         MochiRefreshActivityWidget()
+        
+        // MochiLoad: pairing code in the Dynamic Island and on the lock screen.
+        MochiPairingActivityWidget()
     }
 }
