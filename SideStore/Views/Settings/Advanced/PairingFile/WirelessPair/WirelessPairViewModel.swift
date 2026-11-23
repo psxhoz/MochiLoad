@@ -112,6 +112,9 @@ final class WirelessPairViewModel: ObservableObject {
     private var pairingKeepAwakeTimer: Timer?
     /// True when notifications are off, so the pairing code can't pop up while in Settings.
     @Published var notificationsOff = false
+    /// Set if Settings can't find MochiLoad (Local Network off, no Wi-Fi), so no code would ever arrive.
+    @Published var pairingProblem: MochiPairingProblem?
+    private let pairingDiagnostics = MochiPairingDiagnostics()
     
     private let pairingServiceTypes = [
         "_remotepairing-manual-pairing._tcp",
@@ -166,6 +169,8 @@ final class WirelessPairViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self = self else { return }
                 self.pinCode = pin
+                self.pairingProblem = nil
+                self.pairingDiagnostics.stop()
                 self.statusText = "Device Connected"
                 self.subStatusText = "Enter the pairing code shown below on your other device settings screen."
             }
@@ -512,10 +517,19 @@ final class WirelessPairViewModel: ObservableObject {
         port = nil
         statusText = "Waiting for connection..."
         subStatusText = "Open Settings → Privacy & Security → Developer Mode and tap \"Pair with MochiLoad\"."
+        pairingProblem = nil
         Task { @MainActor in
             let allowed = await Self.ensureNotificationsAllowed()
             self.notificationsOff = !allowed
             self.beginPairingBackgroundTask()
+            // Give the pairing signal a moment to start, then check Settings can see it.
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard self.isAdvertising else { return }
+            self.pairingDiagnostics.start { [weak self] problem in
+                guard let self, self.isAdvertising, self.pinCode == nil else { return }
+                self.pairingProblem = problem
+                if let problem { Self.reportPairingProblem(problem) }
+            }
         }
         
         wirelessPairing.start(
@@ -534,6 +548,8 @@ final class WirelessPairViewModel: ObservableObject {
                 self.port = nil
                 
                 self.endPairingBackgroundTask()
+                self.pairingDiagnostics.stop()
+                self.pairingProblem = nil
                 switch result {
                 case .success(let device):
                     MochiPairingLiveActivity.finish(success: true)
@@ -559,6 +575,8 @@ final class WirelessPairViewModel: ObservableObject {
         debugLog("[WirelessPairViewModel] stopPairing() stopping advertisement and tearing down session")
         wirelessPairing.stop()
         endPairingBackgroundTask()
+        pairingDiagnostics.stop()
+        pairingProblem = nil
         MochiPairingLiveActivity.finish(success: nil)
         
         isAdvertising = false
@@ -696,6 +714,26 @@ final class WirelessPairViewModel: ObservableObject {
             urlString = UIApplication.openSettingsURLString
         }
         if let url = URL(string: urlString) { UIApplication.shared.open(url) }
+    }
+
+    /// Tells the person (who is probably in Settings) why no code is coming.
+    private static func reportPairingProblem(_ problem: MochiPairingProblem) {
+        let title: String
+        let body: String
+        switch problem {
+        case .localNetworkDenied:
+            title = NSLocalizedString("Turn on Local Network for MochiLoad", comment: "")
+            body = NSLocalizedString("Settings can't find MochiLoad, so no code can be sent. Go to Settings → Privacy & Security → Local Network, turn on MochiLoad, then try pairing again.", comment: "")
+        case .notVisible:
+            title = NSLocalizedString("Settings can't see MochiLoad", comment: "")
+            body = NSLocalizedString("Make sure Wi-Fi is on and connected to a network, then open MochiLoad and try pairing again.", comment: "")
+        }
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "mochi.pairing.problem", content: content, trigger: nil))
+        MochiPairingLiveActivity.showProblem(title: title)
     }
 
     /// A first notification so the person knows notifications work before they leave for Settings.

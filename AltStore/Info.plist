@@ -168,7 +168,7 @@
 		<string>_vnc._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>MochiLoad can use local network access to discover Bonjour (mDNS) services on your network. This is not required for core functionality.</string>
+	<string>MochiLoad needs this to pair with your iPhone and install apps. Please tap Allow.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>RefreshAllIntent</string>

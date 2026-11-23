@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct WirelessPairView: View {
     @StateObject private var viewModel = WirelessPairViewModel()
@@ -84,6 +85,11 @@ struct WirelessPairView: View {
                             .padding(.horizontal, 32)
                             .transition(.scale.combined(with: .opacity))
                     }
+                }
+                
+                if let problem = viewModel.pairingProblem, viewModel.isAdvertising {
+                    MochiPairingProblemBanner(problem: problem)
+                        .padding(.horizontal, 20)
                 }
                 
                 if viewModel.notificationsOff && viewModel.isAdvertising {
@@ -390,6 +396,48 @@ struct MochiNotificationsOffBanner: View {
                 WirelessPairViewModel.openNotificationSettings()
             } label: {
                 Text("Turn On Notifications")
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color.orange.opacity(0.2)))
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(.orange)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.orange.opacity(0.1)))
+    }
+}
+
+
+/// MochiLoad: shown while pairing when Settings can't find MochiLoad, so no code will arrive.
+struct MochiPairingProblemBanner: View {
+    let problem: MochiPairingProblem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(problem == .localNetworkDenied ? "Local Network is off" : "Settings can't see MochiLoad",
+                  systemImage: "wifi.exclamationmark")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.orange)
+            Text(problem == .localNetworkDenied
+                 ? "Without it, Settings can't find MochiLoad and no code is sent. Tap below, turn on Local Network, then come back and tap Start pairing again."
+                 : "Make sure Wi-Fi is on and connected to a network (not just cellular). Then stop and start pairing again.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            SwiftUI.Button {
+                let settingsURL = URL(string: UIApplication.openSettingsURLString)!
+                if problem == .localNetworkDenied {
+                    UIApplication.shared.open(settingsURL)
+                } else if let wifiURL = URL(string: "App-prefs:WIFI") {
+                    UIApplication.shared.open(wifiURL) { opened in
+                        if !opened { UIApplication.shared.open(settingsURL) }
+                    }
+                }
+            } label: {
+                Text(problem == .localNetworkDenied ? "Turn On Local Network" : "Open Wi-Fi Settings")
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)

@@ -62,6 +62,13 @@ enum MochiPairingLiveActivity
                dismissAfter: nil)
     }
 
+    /// Shows why no code is coming (stays until pairing stops).
+    static func showProblem(title: String)
+    {
+        update(code: nil, title: title,
+               detail: NSLocalizedString("Open MochiLoad to fix it.", comment: ""), didFail: true, dismissAfter: nil)
+    }
+
     /// Shows the result for a few seconds, then goes away. `success == nil` means pairing was stopped.
     static func finish(success: Bool?)
     {

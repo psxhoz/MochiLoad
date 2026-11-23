@@ -342,10 +342,14 @@ private struct PairingFileStep: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                stepRow(1, NSLocalizedString("Tap Start pairing below, and allow Local Network and Notifications if asked.", comment: ""))
+                stepRow(1, NSLocalizedString("Tap Start pairing below. Tap Allow for Local Network and Notifications — both are needed.", comment: ""))
                 stepRow(2, NSLocalizedString("Open the Settings app → Privacy & Security → Developer Mode.", comment: ""))
                 stepRow(3, NSLocalizedString("Tap \"Pair with MochiLoad\" and type the code from the notification.", comment: ""))
                 stepRow(4, NSLocalizedString("Come back here. That's it.", comment: ""))
+            }
+
+            if pairing.isAdvertising, let problem = pairing.pairingProblem {
+                MochiPairingProblemBanner(problem: problem)
             }
 
             if pairing.isAdvertising && pairing.notificationsOff {
