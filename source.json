@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.18",
-          "buildVersion": "18",
-          "date": "2026-11-23T17:40:15Z",
-          "localizedDescription": "Pairing: show the code in a notification again, drop clipboard copy",
+          "version": "1.0.20",
+          "buildVersion": "20",
+          "date": "2026-11-23T19:08:41Z",
+          "localizedDescription": "Pairing code in the Dynamic Island and on the lock screen",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38740353,
+          "size": 38765788,
           "minOSVersion": "15.0"
         }
       ],
