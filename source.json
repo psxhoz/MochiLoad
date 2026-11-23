@@ -20,12 +20,12 @@
       "category": "utilities",
       "versions": [
         {
-          "version": "1.0.17",
-          "buildVersion": "17",
-          "date": "2026-11-22T22:40:38Z",
-          "localizedDescription": "Auto-update MochiLoad, pick extension option automatically, copy pairing code, app icons on Home",
+          "version": "1.0.18",
+          "buildVersion": "18",
+          "date": "2026-11-23T17:40:15Z",
+          "localizedDescription": "Pairing: show the code in a notification again, drop clipboard copy",
           "downloadURL": "https://github.com/psxhoz/MochiLoad/releases/download/latest-build/MochiLoad.ipa",
-          "size": 38741144,
+          "size": 38740353,
           "minOSVersion": "15.0"
         }
       ],
