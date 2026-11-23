@@ -86,6 +86,11 @@ struct WirelessPairView: View {
                     }
                 }
                 
+                if viewModel.notificationsOff && viewModel.isAdvertising {
+                    MochiNotificationsOffBanner()
+                        .padding(.horizontal, 20)
+                }
+                
                 // Connection Details Card
                 if let serviceID = viewModel.serviceID, let port = viewModel.port {
                         ConnectionDetailsCard(serviceID: serviceID, port: port)
@@ -366,5 +371,35 @@ private struct RoundedCorner: Shape {
             cornerRadii: CGSize(width: radius, height: radius)
         )
         return Path(path.cgPath)
+    }
+}
+
+
+/// MochiLoad: shown while pairing if notifications are off, since the code then can't pop up in Settings.
+struct MochiNotificationsOffBanner: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Notifications are off", systemImage: "bell.slash.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.orange)
+            Text("Your pairing code can't pop up in Settings. Turn notifications on, or switch back to MochiLoad to see the code.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            SwiftUI.Button {
+                WirelessPairViewModel.openNotificationSettings()
+            } label: {
+                Text("Turn On Notifications")
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color.orange.opacity(0.2)))
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(.orange)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.orange.opacity(0.1)))
     }
 }

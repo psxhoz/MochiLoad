@@ -109,6 +109,9 @@ final class WirelessPairViewModel: ObservableObject {
     /// Set once the pairing was saved and switched on.
     @Published var didActivatePairing = false
     private var pairingBackgroundTask: UIBackgroundTaskIdentifier = .invalid
+    private var pairingKeepAwakeTimer: Timer?
+    /// True when notifications are off, so the pairing code can't pop up while in Settings.
+    @Published var notificationsOff = false
     
     private let pairingServiceTypes = [
         "_remotepairing-manual-pairing._tcp",
@@ -156,11 +159,12 @@ final class WirelessPairViewModel: ObservableObject {
         
         wirelessPairing.onPinReceived = { [weak self] (pin: String) in
             debugLog("[WirelessPairViewModel] onPinReceived callback received: pin='\(pin)'")
+            // MochiLoad: the person is in the Settings app at this point, so send the code as a notification
+            // right away (not after hopping to the main thread, which may be paused in the background).
+            Self.postPairingCodeNotification(pin)
             Task { @MainActor in
                 guard let self = self else { return }
                 self.pinCode = pin
-                // MochiLoad: the person is in the Settings app at this point, so show the code as a notification.
-                Self.postPairingCodeNotification(pin)
                 self.statusText = "Device Connected"
                 self.subStatusText = "Enter the pairing code shown below on your other device settings screen."
             }
@@ -507,7 +511,11 @@ final class WirelessPairViewModel: ObservableObject {
         port = nil
         statusText = "Waiting for connection..."
         subStatusText = "Open Settings → Privacy & Security → Developer Mode and tap \"Pair with MochiLoad\"."
-        beginPairingBackgroundTask()
+        Task { @MainActor in
+            let allowed = await Self.ensureNotificationsAllowed()
+            self.notificationsOff = !allowed
+            self.beginPairingBackgroundTask()
+        }
         
         wirelessPairing.start(
             outPath: docsPath,
@@ -634,29 +642,83 @@ final class WirelessPairViewModel: ObservableObject {
         }
     }
 
-    /// iOS only gives a backgrounded app a short time; ask for it while the person types the code in Settings.
+    /// iOS only gives a backgrounded app about 30 seconds, which isn't enough to open Settings and tap
+    /// "Pair with MochiLoad". Silent audio keeps MochiLoad awake (up to 10 minutes) so the code notification
+    /// can still be sent while the person is in Settings.
     private func beginPairingBackgroundTask() {
         endPairingBackgroundTask()
         pairingBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "MochiLoadPairing") { [weak self] in
             Task { @MainActor in self?.endPairingBackgroundTask() }
         }
+        let started = BackgroundAudioService.shared.start()
+        debugLog("[WirelessPairViewModel] keep-awake audio started: \(started)")
+        pairingKeepAwakeTimer?.invalidate()
+        pairingKeepAwakeTimer = Timer.scheduledTimer(withTimeInterval: 10 * 60, repeats: false) { _ in
+            BackgroundAudioService.shared.stop()
+        }
+        Self.postReadyToPairNotification()
     }
 
     private func endPairingBackgroundTask() {
+        pairingKeepAwakeTimer?.invalidate()
+        pairingKeepAwakeTimer = nil
+        BackgroundAudioService.shared.stop()
         guard pairingBackgroundTask != .invalid else { return }
         UIApplication.shared.endBackgroundTask(pairingBackgroundTask)
         pairingBackgroundTask = .invalid
     }
 
-    private static func postPairingCodeNotification(_ pin: String) {
+    /// Checks notifications before pairing. Asks if never asked; returns false if they're turned off.
+    static func ensureNotificationsAllowed() async -> Bool {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            return (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        case .denied:
+            return false
+        default:
+            return settings.alertSetting != .disabled || settings.notificationCenterSetting != .disabled
+        }
+    }
+
+    /// Opens MochiLoad's notification settings.
+    static func openNotificationSettings() {
+        let urlString: String
+        if #available(iOS 16, *) {
+            urlString = UIApplication.openNotificationSettingsURLString
+        } else {
+            urlString = UIApplication.openSettingsURLString
+        }
+        if let url = URL(string: urlString) { UIApplication.shared.open(url) }
+    }
+
+    /// A first notification so the person knows notifications work before they leave for Settings.
+    nonisolated private static func postReadyToPairNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = NSLocalizedString("MochiLoad is ready to pair", comment: "")
+        content.body = NSLocalizedString("Open Settings → Privacy & Security → Developer Mode and tap \"Pair with MochiLoad\". Your code will pop up here.", comment: "")
+        content.sound = nil
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "mochi.pairing.ready", content: content, trigger: nil))
+    }
+
+    nonisolated private static func postPairingCodeNotification(_ pin: String) {
         let content = UNMutableNotificationContent()
         // "123 456" is easier to read and type than "123456".
         let spaced = pin.count == 6 ? "\(pin.prefix(3)) \(pin.suffix(3))" : pin
         content.title = String(format: NSLocalizedString("Your pairing code: %@", comment: ""), spaced)
         content.body = NSLocalizedString("Type these 6 numbers in Settings to finish pairing.", comment: "")
         content.sound = .default
+        if #available(iOS 15.0, *) {
+            content.interruptionLevel = .active
+            content.relevanceScore = 1
+        }
+        let center = UNUserNotificationCenter.current()
+        center.removeDeliveredNotifications(withIdentifiers: ["mochi.pairing.ready"])
         let request = UNNotificationRequest(identifier: "mochi.pairing.code", content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        center.add(request) { error in
+            if let error { debugLog("[WirelessPairViewModel] Could not post pairing code notification: \(error)") }
+        }
     }
 
     nonisolated static func pairingFileName(for deviceName: String? = nil, model: String? = nil) -> String {

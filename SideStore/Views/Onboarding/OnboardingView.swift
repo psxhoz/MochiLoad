@@ -348,6 +348,10 @@ private struct PairingFileStep: View {
                 stepRow(4, NSLocalizedString("Come back here. That's it.", comment: ""))
             }
 
+            if pairing.isAdvertising && pairing.notificationsOff {
+                MochiNotificationsOffBanner()
+            }
+
             if pairing.isAdvertising {
                 VStack(spacing: 6) {
                     if let pin = pairing.pinCode {
@@ -405,9 +409,8 @@ private struct PairingFileStep: View {
             pairing.stopPairing()
             return
         }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in
-            Task { @MainActor in pairing.startPairing() }
-        }
+        // startPairing() asks for notifications first if needed.
+        pairing.startPairing()
     }
 }
 
