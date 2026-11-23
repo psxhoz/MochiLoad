@@ -344,7 +344,7 @@ private struct PairingFileStep: View {
             VStack(alignment: .leading, spacing: 10) {
                 stepRow(1, NSLocalizedString("Tap Start pairing below, and allow Local Network and Notifications if asked.", comment: ""))
                 stepRow(2, NSLocalizedString("Open the Settings app → Privacy & Security → Developer Mode.", comment: ""))
-                stepRow(3, NSLocalizedString("Tap \"Pair with MochiLoad\". The code is copied for you, so just paste it.", comment: ""))
+                stepRow(3, NSLocalizedString("Tap \"Pair with MochiLoad\" and type the code from the notification.", comment: ""))
                 stepRow(4, NSLocalizedString("Come back here. That's it.", comment: ""))
             }
 
@@ -357,16 +357,10 @@ private struct PairingFileStep: View {
                             .font(.system(size: 34, weight: .bold, design: .monospaced))
                             .foregroundColor(MochiColors.text)
                             .tracking(4)
-                        Text(NSLocalizedString("Copied! In Settings, tap the code box and paste it.", comment: ""))
+                        Text(NSLocalizedString("Type this code in Settings. It's also in your notifications.", comment: ""))
                             .font(.footnote)
-                            .foregroundColor(Color(hex: 0x5EEAD4))
+                            .foregroundColor(MochiColors.mutedText)
                             .multilineTextAlignment(.center)
-                        SwiftUI.Button {
-                            WirelessPairViewModel.copyPairingCode(pin)
-                        } label: {
-                            Label(NSLocalizedString("Copy again", comment: ""), systemImage: "doc.on.doc")
-                                .font(.footnote.weight(.semibold))
-                        }
                     } else {
                         HStack(spacing: 8) {
                             ProgressView()

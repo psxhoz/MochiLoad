@@ -194,12 +194,7 @@ struct WirelessPairView: View {
             SwiftUI.Button("Pair") {
                 viewModel.submitEnteredPin()
             }
-            SwiftUI.Button("Paste Code & Pair") {
-                if let pin = WirelessPairViewModel.pairingCodeFromClipboard() {
-                    viewModel.enteredPin = pin
-                }
-                viewModel.submitEnteredPin()
-            }
+
             SwiftUI.Button("Cancel", role: .cancel) {
                 viewModel.cancelPinPrompt()
             }
@@ -238,7 +233,7 @@ struct WirelessPairPinDialog: View {
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text("It's copied. In Settings, tap the code box and paste it (or type it in).")
+                    Text("Type this code in Settings. It's also in your notifications.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -266,13 +261,6 @@ struct WirelessPairPinDialog: View {
                     }
                 }
                 .padding(.vertical, 8)
-                
-                SwiftUI.Button {
-                    WirelessPairViewModel.copyPairingCode(pin)
-                } label: {
-                    Label("Copy Code Again", systemImage: "doc.on.doc")
-                        .font(.subheadline.weight(.semibold))
-                }
                 
                 Spacer()
             }

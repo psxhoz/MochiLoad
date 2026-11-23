@@ -159,9 +159,7 @@ final class WirelessPairViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self = self else { return }
                 self.pinCode = pin
-                // MochiLoad: copy the code so it can be pasted in Settings, and show it as a notification too
-                // (the person is in the Settings app at this point).
-                Self.copyPairingCode(pin)
+                // MochiLoad: the person is in the Settings app at this point, so show the code as a notification.
                 Self.postPairingCodeNotification(pin)
                 self.statusText = "Device Connected"
                 self.subStatusText = "Enter the pairing code shown below on your other device settings screen."
@@ -650,29 +648,12 @@ final class WirelessPairViewModel: ObservableObject {
         pairingBackgroundTask = .invalid
     }
 
-    /// Copies the pairing code for 5 minutes, so it can be pasted in Settings.
-    static func copyPairingCode(_ pin: String) {
-        #if !os(tvOS)
-        UIPasteboard.general.setItems([["public.utf8-plain-text": pin]],
-                                      options: [.expirationDate: Date().addingTimeInterval(5 * 60)])
-        #endif
-    }
-
-    /// A 6-digit code from the clipboard, if there is one (used when the other device shows the code).
-    static func pairingCodeFromClipboard() -> String? {
-        #if !os(tvOS)
-        guard UIPasteboard.general.hasStrings, let text = UIPasteboard.general.string else { return nil }
-        let digits = text.filter(\.isNumber)
-        return digits.count == 6 ? digits : nil
-        #else
-        return nil
-        #endif
-    }
-
     private static func postPairingCodeNotification(_ pin: String) {
         let content = UNMutableNotificationContent()
-        content.title = String(format: NSLocalizedString("Pairing code: %@ (copied)", comment: ""), pin)
-        content.body = NSLocalizedString("In Settings, tap the code box and paste it, or type it in.", comment: "")
+        // "123 456" is easier to read and type than "123456".
+        let spaced = pin.count == 6 ? "\(pin.prefix(3)) \(pin.suffix(3))" : pin
+        content.title = String(format: NSLocalizedString("Your pairing code: %@", comment: ""), spaced)
+        content.body = NSLocalizedString("Type these 6 numbers in Settings to finish pairing.", comment: "")
         content.sound = .default
         let request = UNNotificationRequest(identifier: "mochi.pairing.code", content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
